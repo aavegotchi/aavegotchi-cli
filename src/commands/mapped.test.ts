@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findMappedFunction, listMappedCommandsForRoot } from "./mapped";
+import { findMappedFunction, listMappedCommands, listMappedCommandsForRoot } from "./mapped";
 
 describe("mapped domain commands", () => {
     it("resolves known mapping", () => {
@@ -15,5 +15,11 @@ describe("mapped domain commands", () => {
         const lending = listMappedCommandsForRoot("lending");
         expect(lending).toContain("lending create");
         expect(lending).toContain("lending agree");
+    });
+
+    it("lists mapped commands globally", () => {
+        const all = listMappedCommands();
+        expect(all).toContain("baazaar buy-now");
+        expect(all).toContain("token approve");
     });
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { normalizeGlobals, parseArgv } from "./args";
+import { getFlagBoolean, normalizeGlobals, parseArgv } from "./args";
 import { executeCommand, normalizeCommandPath } from "./command-runner";
 import { toCliError } from "./errors";
 import { initializeLogger } from "./logger";
@@ -12,9 +12,15 @@ async function run(): Promise<void> {
     initializeLogger(globals);
 
     const commandPath = normalizeCommandPath(args.positionals);
+    const helpRequested = getFlagBoolean(args.flags, "help", "h");
 
     if (commandPath[0] === "help") {
-        outputHelp();
+        outputHelp(commandPath.slice(1), args.flags);
+        return;
+    }
+
+    if (helpRequested) {
+        outputHelp(commandPath, args.flags);
         return;
     }
 

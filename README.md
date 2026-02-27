@@ -55,6 +55,34 @@ Planned domain namespaces are stubbed for parity tracking:
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
 Example: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
 
+## Command help and discoverability
+
+The CLI supports command-targeted help:
+
+```bash
+ag --help
+ag tx send --help
+ag help baazaar buy-now
+```
+
+Mapped write commands now expose their onchain function mapping and required flags:
+
+```bash
+ag baazaar buy-now --help
+```
+
+If you provide `--abi-file` with `--help`, the CLI prints ABI-derived function signature and input names for the mapped method:
+
+```bash
+ag baazaar buy-now --help --abi-file ./abis/BaazaarFacet.json
+```
+
+Unknown commands return suggestions:
+
+```bash
+ag tx snd --json
+```
+
 ## Dry-run writes
 
 Use `--dry-run` on write commands to run full preflight without broadcasting:

@@ -1,5 +1,6 @@
 import { CliError } from "./errors";
 import { CommandContext, JsonValue } from "./types";
+import { suggestCommands } from "./command-catalog";
 import { runBatchRunCommand } from "./commands/batch";
 import { runBootstrapCommand } from "./commands/bootstrap";
 import { findMappedFunction, runMappedDomainCommand } from "./commands/mapped";
@@ -34,8 +35,12 @@ export interface CommandExecutionResult {
 }
 
 export function normalizeCommandPath(positionals: string[]): string[] {
-    if (positionals.length === 0 || positionals[0] === "help") {
+    if (positionals.length === 0) {
         return ["help"];
+    }
+
+    if (positionals[0] === "help") {
+        return positionals;
     }
 
     return positionals;
@@ -269,5 +274,11 @@ export async function executeCommand(ctx: CommandContext): Promise<CommandExecut
         };
     }
 
-    throw new CliError("UNKNOWN_COMMAND", `Unknown command '${ctx.commandPath.join(" ")}'.`, 2);
+    const command = ctx.commandPath.join(" ");
+    const suggestions = suggestCommands(command);
+    throw new CliError("UNKNOWN_COMMAND", `Unknown command '${command}'.`, 2, {
+        command,
+        suggestions,
+        hint: suggestions.length > 0 ? "Try one of the suggested commands with '--help'." : "Run 'ag help'.",
+    });
 }

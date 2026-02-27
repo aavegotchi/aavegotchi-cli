@@ -1,6 +1,7 @@
 import { CliError } from "../errors";
 import { CommandContext, JsonValue } from "../types";
 
+import { getMappedWriteDefaults } from "./mapped-defaults";
 import { runOnchainSendWithFunction } from "./onchain";
 
 const MAPPED_WRITE_COMMANDS: Record<string, string> = {
@@ -74,10 +75,22 @@ export async function runMappedDomainCommand(ctx: CommandContext): Promise<JsonV
         });
     }
 
-    const result = await runOnchainSendWithFunction(ctx, method, key);
+    const defaults = getMappedWriteDefaults(ctx.commandPath);
+    const result = await runOnchainSendWithFunction(ctx, method, key, {
+        abi: defaults?.abi,
+        address: defaults?.address,
+        source: defaults?.source,
+    });
 
     return {
         mappedMethod: method,
+        defaults: defaults
+            ? {
+                  source: defaults.source,
+                  address: defaults.address || null,
+                  abi: defaults.abi ? "available" : "none",
+              }
+            : null,
         result,
     };
 }

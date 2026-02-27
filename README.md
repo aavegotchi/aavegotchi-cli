@@ -53,7 +53,8 @@ Planned domain namespaces are stubbed for parity tracking:
 - `gotchi`, `portal`, `wearables`, `items`, `inventory`, `baazaar`, `auction`, `lending`, `staking`, `gotchi-points`, `realm`, `alchemica`, `forge`, `token`
 
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
-Example: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
+Example with built-in defaults: `ag auction bid --args-json '[...]' --dry-run --json`
+Example with explicit metadata: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
 
 ## Command help and discoverability
 
@@ -65,10 +66,11 @@ ag tx send --help
 ag help baazaar buy-now
 ```
 
-Mapped write commands now expose their onchain function mapping and required flags:
+Mapped write commands now expose their onchain function mapping, defaults (if available), and required flags:
 
 ```bash
 ag baazaar buy-now --help
+ag auction bid --help
 ```
 
 If you provide `--abi-file` with `--help`, the CLI prints ABI-derived function signature and input names for the mapped method:

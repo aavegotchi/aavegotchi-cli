@@ -3,6 +3,7 @@ import * as os from "os";
 import * as path from "path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { parseAbi } from "viem";
 
 import { CommandContext } from "../types";
 
@@ -37,7 +38,7 @@ vi.mock("../tx-engine", () => ({
     executeTxIntent: executeTxIntentMock,
 }));
 
-import { runOnchainSendCommand } from "./onchain";
+import { runOnchainSendCommand, runOnchainSendWithFunction } from "./onchain";
 import { runTxSendCommand } from "./tx";
 
 const files: string[] = [];
@@ -186,6 +187,42 @@ describe("write command dry-run flags", () => {
             }),
             expect.objectContaining({ chainId: 8453 }),
         );
+    });
+
+    it("accepts mapped defaults when --abi-file and --address are omitted", async () => {
+        const result = await runOnchainSendWithFunction(
+            createContext(["auction", "bid"], {
+                "args-json": '["1","1","1","0x1111111111111111111111111111111111111111","1","1","0x"]',
+                "dry-run": true,
+            }),
+            "commitBid",
+            "auction bid",
+            {
+                abi: parseAbi(["function commitBid(uint256,uint256,uint256,address,uint256,uint256,bytes)"]),
+                address: "0x80320a0000c7a6a34086e2acad6915ff57ffda31",
+                source: "base.gbm-diamond",
+            },
+        );
+
+        expect(executeTxIntentMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                command: "auction bid",
+                to: "0x80320a0000c7a6a34086e2acad6915ff57ffda31",
+                dryRun: true,
+            }),
+            expect.objectContaining({ chainId: 8453 }),
+        );
+        expect(
+            result as {
+                defaults: { abi: string; address: string; source: string };
+            },
+        ).toMatchObject({
+            defaults: {
+                abi: "mapped-default",
+                address: "mapped-default",
+                source: "base.gbm-diamond",
+            },
+        });
     });
 
     it("rejects --dry-run with --wait on onchain send", async () => {

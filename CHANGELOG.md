@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- Built-in mapped write metadata for GBM auction commands (`auction bid`, `auction buy-now`, `auction cancel`, `auction create`, `auction swap-bid`):
+  - default contract address: `0x80320a0000c7a6a34086e2acad6915ff57ffda31`
+  - built-in ABI signatures for mapped function encoding
+- Mapped help for auction writes now prints built-in ABI signature details without requiring `--abi-file`.
+
+### Changed
+
+- Mapped write execution now auto-uses built-in ABI/address defaults when available, while still allowing explicit `--abi-file` / `--address` overrides.
+
 ## 0.2.3 - 2026-02-27
 
 ### Fixed

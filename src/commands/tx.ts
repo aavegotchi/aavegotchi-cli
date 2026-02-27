@@ -93,10 +93,15 @@ export async function runTxSendCommand(ctx: CommandContext): Promise<JsonValue> 
     const nonceValue = getFlagString(ctx.args.flags, "nonce");
     const nonce = nonceValue ? parseNumberFlag(nonceValue, "--nonce", 0) : undefined;
     const waitForReceipt = getFlagBoolean(ctx.args.flags, "wait") || getFlagBoolean(ctx.args.flags, "confirm");
+    const dryRun = getFlagBoolean(ctx.args.flags, "dry-run");
     const timeoutMs = parseNumberFlag(getFlagString(ctx.args.flags, "timeout-ms"), "--timeout-ms", 120000);
 
     if (noncePolicy === "manual" && nonce === undefined) {
         throw new CliError("MISSING_NONCE", "--nonce is required when --nonce-policy=manual.", 2);
+    }
+
+    if (dryRun && waitForReceipt) {
+        throw new CliError("INVALID_ARGUMENT", "--dry-run cannot be combined with --wait/--confirm.", 2);
     }
 
     const intent: TxIntent = {
@@ -112,6 +117,7 @@ export async function runTxSendCommand(ctx: CommandContext): Promise<JsonValue> 
         noncePolicy,
         nonce,
         waitForReceipt,
+        dryRun,
         timeoutMs,
         command: "tx send",
     };

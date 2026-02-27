@@ -55,6 +55,26 @@ Planned domain namespaces are stubbed for parity tracking:
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
 Example: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
 
+## Dry-run writes
+
+Use `--dry-run` on write commands to run full preflight without broadcasting:
+
+- runs simulation (`eth_call`)
+- runs gas + fee estimation
+- enforces policy checks
+- resolves nonce
+- returns `status: \"simulated\"` with simulation details
+
+Supported write surfaces:
+
+- `tx send --dry-run`
+- `onchain send --dry-run`
+- mapped write aliases (for example: `token approve --dry-run`)
+
+Safety rule:
+
+- `--dry-run` cannot be combined with `--wait` / `--confirm`
+
 ## Subgraph sources and endpoint policy
 
 Canonical source aliases:
@@ -186,5 +206,12 @@ npm run typecheck
 npm test
 npm run build
 npm run parity:check
+npm run smoke:write-dryrun
 npm run ag -- help
 ```
+
+Write dry-run smoke test notes:
+
+- `npm run smoke:write-dryrun` validates write paths without broadcasting any transaction.
+- To run against an installed binary instead of local source:
+  - `AG_BIN=/absolute/path/to/ag npm run smoke:write-dryrun`

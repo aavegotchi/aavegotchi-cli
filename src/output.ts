@@ -80,7 +80,7 @@ Core commands:
   rpc check                          Verify RPC connectivity + signer backend health
 
 Tx commands:
-  tx send                            Send a raw EVM transaction with simulation + policy checks + journaling
+  tx send                            Send a raw EVM transaction (or simulate only with --dry-run)
   tx status                          Read tx status by idempotency key/hash or list recent
   tx resume                          Resume waiting for a previously submitted tx
   tx watch                           Poll journal until tx is confirmed
@@ -90,7 +90,7 @@ Automation commands:
 
 Power-user commands:
   onchain call                       Call any ABI function from --abi-file
-  onchain send                       Send any ABI function as a transaction
+  onchain send                       Send any ABI function as a transaction (or simulate with --dry-run)
   subgraph list|check|query          List/check/query canonical Goldsky subgraphs
 
 Domain namespaces:
@@ -123,6 +123,7 @@ Examples:
   ag bootstrap --mode agent --profile prod --chain base --signer env:AGCLI_PRIVATE_KEY --json
   AGCLI_KEYCHAIN_PASSPHRASE=... AGCLI_PRIVATE_KEY=0x... ag signer keychain import --account-id bot --private-key-env AGCLI_PRIVATE_KEY --json
   ag tx send --profile prod --to 0xabc... --value-wei 1000000000000000 --wait --json
+  ag tx send --profile prod --to 0xabc... --value-wei 0 --dry-run --json
   ag subgraph check --source core-base --json
   ag baazaar listing active --kind erc721 --first 20 --json
   ag auction active --first 20 --json

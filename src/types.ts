@@ -203,20 +203,28 @@ export interface TxIntent {
     noncePolicy: NoncePolicy;
     nonce?: number;
     waitForReceipt: boolean;
+    dryRun?: boolean;
     timeoutMs: number;
     command: string;
 }
 
 export interface TxExecutionResult {
     idempotencyKey?: string;
-    txHash: `0x${string}`;
+    txHash?: `0x${string}`;
     from: `0x${string}`;
     to: `0x${string}`;
     nonce: number;
     gasLimit: string;
     maxFeePerGasWei?: string;
     maxPriorityFeePerGasWei?: string;
-    status: "submitted" | "confirmed";
+    status: "simulated" | "submitted" | "confirmed";
+    dryRun?: boolean;
+    simulation?: {
+        requiredWei: string;
+        balanceWei: string;
+        signerCanSign: boolean;
+        noncePolicy: NoncePolicy;
+    };
     receipt?: {
         blockNumber: string;
         gasUsed: string;

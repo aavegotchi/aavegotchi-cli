@@ -1,0 +1,32 @@
+{
+  "name": "@aavegotchi/aavegotchi-cli",
+  "version": "0.1.0",
+  "description": "Agent-first CLI for automating Aavegotchi app and onchain workflows",
+  "license": "MIT",
+  "repository": "git@github.com:aavegotchi/aavegotchi-cli.git",
+  "type": "commonjs",
+  "bin": {
+    "ag": "dist/index.js",
+    "aavegotchi-cli": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ag": "tsx src/index.ts",
+    "bootstrap:smoke": "AGCLI_HOME=/tmp/agcli-smoke tsx src/index.ts bootstrap --mode agent --profile smoke --chain base --signer readonly --json"
+  },
+  "dependencies": {
+    "ethers": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.2",
+    "vitest": "^4.0.18"
+  }
+}

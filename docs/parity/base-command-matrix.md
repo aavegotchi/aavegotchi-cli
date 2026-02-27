@@ -26,7 +26,6 @@ Status legend:
 | lending | `claimAndEndGotchiLending` | `lending claim-end` | implemented (mapped) |
 | forge | `claimForgeQueueItems` | `forge queue claim` | implemented (mapped) |
 | auction | `commitBid` | `auction bid` | implemented (mapped) |
-| gotchi-points | `convertAlchemica` | `gotchi-points convert-alchemica` | implemented (mapped) |
 | auction | `createAuction` | `auction create` | implemented (mapped) |
 | lending | `createWhitelist` | `lending whitelist create` | implemented (mapped) |
 | staking | `decreaseAndDestroy` | `staking unstake-destroy` | implemented (mapped) |

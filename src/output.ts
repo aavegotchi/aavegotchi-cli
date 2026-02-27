@@ -76,7 +76,7 @@ Subgraph wrappers:
   auction bid|bid-unbid
 
 Domain namespaces:
-  gotchi, portal, wearables, items, inventory, baazaar, auction, lending, staking, gotchi-points, realm, alchemica, forge, token
+  gotchi, portal, wearables, items, inventory, baazaar, auction, lending, staking, realm, alchemica, forge, token
   (many write flows are mapped aliases that route through onchain send)
 
 Global flags:

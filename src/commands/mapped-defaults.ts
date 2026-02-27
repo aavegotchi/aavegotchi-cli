@@ -56,7 +56,6 @@ const WRAP_MAPPED_WRITE_ABI = parseAbi(["function enterWithUnderlying(uint256)",
 const GHST_STAKING_MAPPED_WRITE_ABI = parseAbi(["function withdrawFromPool(address,uint256)"]);
 const SOCKET_VAULT_MAPPED_WRITE_ABI = parseAbi(["function bridge(address,uint256,uint256,address,bytes,bytes)"]);
 const MERKLE_DISTRIBUTOR_MAPPED_WRITE_ABI = parseAbi(["function claim(uint256,bytes32[])"]);
-const GOTCHI_POINTS_MAPPED_WRITE_ABI = parseAbi(["function convertAlchemica(address,uint256,uint256,uint256,uint256)"]);
 const ERC20_MAPPED_WRITE_ABI = parseAbi(["function approve(address,uint256)"]);
 const ERC1155_MAPPED_WRITE_ABI = parseAbi([
     "function safeTransferFrom(address,address,uint256,uint256,bytes)",
@@ -151,10 +150,6 @@ const MAPPED_WRITE_DEFAULTS: Record<string, MappedWriteDefaults> = {
         address: BASE_GBM_DIAMOND,
         abi: GBM_MAPPED_WRITE_ABI,
         source: "base.gbm-diamond",
-    },
-    "gotchi-points convert-alchemica": {
-        abi: GOTCHI_POINTS_MAPPED_WRITE_ABI,
-        source: "canonical.gotchi-points",
     },
     "auction create": {
         address: BASE_GBM_DIAMOND,

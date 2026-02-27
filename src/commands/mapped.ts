@@ -23,7 +23,6 @@ const MAPPED_WRITE_COMMANDS: Record<string, string> = {
     "lending claim-end": "claimAndEndGotchiLending",
     "forge queue claim": "claimForgeQueueItems",
     "auction bid": "commitBid",
-    "gotchi-points convert-alchemica": "convertAlchemica",
     "auction create": "createAuction",
     "lending whitelist create": "createWhitelist",
     "staking unstake-destroy": "decreaseAndDestroy",

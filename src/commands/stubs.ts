@@ -12,7 +12,6 @@ const SUPPORTED_STUB_ROOTS = [
     "auction",
     "lending",
     "staking",
-    "gotchi-points",
     "realm",
     "alchemica",
     "forge",

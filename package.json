@@ -1,9 +1,12 @@
 {
-  "name": "@aavegotchi/aavegotchi-cli",
+  "name": "aavegotchi-cli",
   "version": "0.1.0",
   "description": "Agent-first CLI for automating Aavegotchi app and onchain workflows",
   "license": "MIT",
-  "repository": "git@github.com:aavegotchi/aavegotchi-cli.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aavegotchi/aavegotchi-cli.git"
+  },
   "type": "commonjs",
   "main": "dist/index.js",
   "files": [
@@ -14,11 +17,14 @@
     "ag": "dist/index.js",
     "aavegotchi-cli": "dist/index.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

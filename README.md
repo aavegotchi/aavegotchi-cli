@@ -5,6 +5,12 @@ Agent-first CLI for automating Aavegotchi app and onchain workflows on Base.
 ## Install
 
 ```bash
+npm install -g aavegotchi-cli
+```
+
+For local development:
+
+```bash
 npm install
 ```
 

@@ -24,7 +24,6 @@ This inventory intentionally excludes raffle/ticket-related method names for Bas
 - claimAndEndGotchiLending
 - claimForgeQueueItems
 - commitBid
-- convertAlchemica
 - createAuction
 - createWhitelist
 - decreaseAndDestroy

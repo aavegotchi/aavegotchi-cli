@@ -51,7 +51,7 @@ npm run ag -- bootstrap --mode agent --profile prod --chain base --signer readon
 
 Planned domain namespaces are stubbed for parity tracking:
 
-- `gotchi`, `portal`, `wearables`, `items`, `inventory`, `baazaar`, `auction`, `lending`, `staking`, `gotchi-points`, `realm`, `alchemica`, `forge`, `token`
+- `gotchi`, `portal`, `wearables`, `items`, `inventory`, `baazaar`, `auction`, `lending`, `staking`, `realm`, `alchemica`, `forge`, `token`
 
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
 Mapped writes now include built-in ABI defaults, so `--abi-file` is no longer required for mapped command execution/help.

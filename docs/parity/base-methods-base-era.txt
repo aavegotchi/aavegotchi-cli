@@ -15,7 +15,6 @@ claimAavegotchi
 claimAndEndGotchiLending
 claimForgeQueueItems
 commitBid
-convertAlchemica
 createAuction
 createWhitelist
 decreaseAndDestroy

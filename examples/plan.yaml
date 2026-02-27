@@ -1,0 +1,15 @@
+version: 1
+profile: prod
+mode: agent
+continueOnError: false
+steps:
+  - id: rpc-health
+    command: rpc check
+  - id: profile-export
+    command: profile export
+    dependsOn: [rpc-health]
+  - id: tx-overview
+    command: tx status
+    args:
+      limit: 10
+    dependsOn: [rpc-health]

@@ -1,8 +1,7 @@
-import * as fs from "fs";
-
-import { decodeFunctionResult, encodeFunctionData, type Abi } from "viem";
+import { decodeFunctionResult, encodeFunctionData } from "viem";
 
 import { getFlagBoolean, getFlagString } from "../args";
+import { parseAbiFile } from "../abi";
 import { resolveChain, resolveRpcUrl } from "../chains";
 import { getPolicyOrThrow, getProfileOrThrow, loadConfig } from "../config";
 import { CliError } from "../errors";
@@ -35,29 +34,6 @@ function parseArgsJson(value: string | undefined): readonly unknown[] {
     }
 
     return parsed;
-}
-
-function parseAbiFile(filePath: string): Abi {
-    if (!fs.existsSync(filePath)) {
-        throw new CliError("ABI_NOT_FOUND", `ABI file not found: ${filePath}`, 2);
-    }
-
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    } catch {
-        throw new CliError("INVALID_ABI", `ABI file is not valid JSON: ${filePath}`, 2);
-    }
-
-    if (Array.isArray(parsed)) {
-        return parsed as Abi;
-    }
-
-    if (typeof parsed === "object" && parsed !== null && "abi" in parsed && Array.isArray((parsed as { abi: unknown }).abi)) {
-        return (parsed as { abi: Abi }).abi;
-    }
-
-    throw new CliError("INVALID_ABI", `ABI file must be an array or object containing 'abi'.`, 2);
 }
 
 function parseValueWei(value: string | undefined): bigint | undefined {

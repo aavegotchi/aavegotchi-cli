@@ -50,8 +50,16 @@ export function findMappedFunction(commandPath: string[]): string | undefined {
     return MAPPED_WRITE_COMMANDS[key];
 }
 
+export function listMappedCommands(): string[] {
+    return Object.keys(MAPPED_WRITE_COMMANDS).sort((a, b) => a.localeCompare(b));
+}
+
 export function listMappedCommandsForRoot(root: string): string[] {
-    return Object.keys(MAPPED_WRITE_COMMANDS).filter((entry) => entry.startsWith(`${root} `));
+    return listMappedCommands().filter((entry) => entry.startsWith(`${root} `));
+}
+
+export function getMappedCommandEntries(): Record<string, string> {
+    return { ...MAPPED_WRITE_COMMANDS };
 }
 
 export async function runMappedDomainCommand(ctx: CommandContext): Promise<JsonValue> {

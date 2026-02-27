@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Command-targeted help:
+  - `ag --help`
+  - `ag <command> --help`
+  - `ag help <command>`
+- Mapped-write help now includes mapped function name, required flags, and dry-run pattern.
+- ABI-derived signature/input introspection for mapped help when `--abi-file` is passed.
+- Unknown command suggestion list in `UNKNOWN_COMMAND` error details.
+- CLI UX audit report: `docs/ux/cli-ux-audit-2026-02-27.md`.
+
+### Changed
+
+- Stub namespace errors now include mapped command options for the requested root.
+
 ## 0.2.1 - 2026-02-27
 
 ### Added

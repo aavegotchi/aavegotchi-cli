@@ -1,0 +1,75 @@
+import { CliError } from "../errors";
+import { CommandContext, JsonValue } from "../types";
+
+import { runOnchainSendWithFunction } from "./onchain";
+
+const MAPPED_WRITE_COMMANDS: Record<string, string> = {
+    "lending create": "addGotchiLending",
+    "lending agree": "agreeGotchiLending",
+    "token approve": "approve",
+    "gotchi xp claim-batch": "batchDropClaimXPDrop",
+    "baazaar listing batch-execute": "batchExecuteERC1155Listing",
+    "realm harvest batch": "batchHarvest",
+    "token bridge": "bridge",
+    "baazaar buy-now": "buyNow",
+    "auction buy-now": "buyNow",
+    "auction cancel": "cancelAuction",
+    "baazaar cancel-erc1155": "cancelERC1155Listing",
+    "baazaar cancel-erc721": "cancelERC721Listing",
+    "lending cancel": "cancelGotchiLending",
+    "forge claim": "claim",
+    "portal claim": "claimAavegotchi",
+    "lending claim-end": "claimAndEndGotchiLending",
+    "forge queue claim": "claimForgeQueueItems",
+    "auction bid": "commitBid",
+    "gotchi-points convert-alchemica": "convertAlchemica",
+    "auction create": "createAuction",
+    "lending whitelist create": "createWhitelist",
+    "staking unstake-destroy": "decreaseAndDestroy",
+    "staking enter-underlying": "enterWithUnderlying",
+    "gotchi equip-delegated": "equipDelegatedWearables",
+    "forge craft": "forgeWearables",
+    "staking leave-underlying": "leaveToUnderlying",
+    "portal open": "openPortals",
+    "forge speedup": "reduceQueueTime",
+    "inventory transfer": "safeTransferFrom",
+    "token set-approval-for-all": "setApprovalForAll",
+    "forge smelt": "smeltWearables",
+    "gotchi spend-skill-points": "spendSkillPoints",
+    "baazaar swap-buy-now": "swapAndBuyNow",
+    "auction swap-bid": "swapAndCommitBid",
+    "lending transfer-escrow": "transferEscrow",
+    "baazaar update-erc1155": "updateERC1155ListingPriceAndQuantity",
+    "lending whitelist update": "updateWhitelist",
+    "gotchi feed": "useConsumables",
+    "staking withdraw-pool": "withdrawFromPool",
+};
+
+export function findMappedFunction(commandPath: string[]): string | undefined {
+    const key = commandPath.join(" ");
+    return MAPPED_WRITE_COMMANDS[key];
+}
+
+export function listMappedCommandsForRoot(root: string): string[] {
+    return Object.keys(MAPPED_WRITE_COMMANDS).filter((entry) => entry.startsWith(`${root} `));
+}
+
+export async function runMappedDomainCommand(ctx: CommandContext): Promise<JsonValue> {
+    const key = ctx.commandPath.join(" ");
+    const method = MAPPED_WRITE_COMMANDS[key];
+
+    if (!method) {
+        const candidates = listMappedCommandsForRoot(ctx.commandPath[0]);
+        throw new CliError("COMMAND_NOT_IMPLEMENTED", `Mapped command '${key}' is not defined.`, 2, {
+            command: key,
+            availableForRoot: candidates,
+        });
+    }
+
+    const result = await runOnchainSendWithFunction(ctx, method, key);
+
+    return {
+        mappedMethod: method,
+        result,
+    };
+}

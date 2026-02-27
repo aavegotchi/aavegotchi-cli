@@ -40,6 +40,9 @@ Planned domain namespaces are stubbed for parity tracking:
 
 - `gotchi`, `portal`, `wearables`, `items`, `inventory`, `baazaar`, `lending`, `realm`, `alchemica`, `forge`, `token`
 
+Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
+Example: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
+
 ## Agent-mode behavior
 
 `--mode agent` implies:

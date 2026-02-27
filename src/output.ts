@@ -90,8 +90,9 @@ Power-user commands:
   onchain call                       Call any ABI function from --abi-file
   onchain send                       Send any ABI function as a transaction
 
-Planned domain namespaces (stubbed):
+Domain namespaces:
   gotchi, portal, wearables, items, inventory, baazaar, lending, realm, alchemica, forge, token
+  (many write flows are mapped to onchain send aliases; unmatched commands return typed not-implemented)
 
 Global flags:
   --mode <agent|human>               Agent mode implies --json --yes
@@ -110,6 +111,7 @@ Bootstrap flags:
 Examples:
   ag bootstrap --mode agent --profile prod --chain base --signer env:AGCLI_PRIVATE_KEY --json
   ag tx send --profile prod --to 0xabc... --value-wei 1000000000000000 --wait --json
+  ag lending create --profile prod --abi-file ./abis/GotchiLendingFacet.json --address 0xabc... --args-json '[...]' --json
   ag batch run --file ./plan.yaml --json
 `);
 }

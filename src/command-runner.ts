@@ -2,6 +2,7 @@ import { CliError } from "./errors";
 import { CommandContext, JsonValue } from "./types";
 import { runBatchRunCommand } from "./commands/batch";
 import { runBootstrapCommand } from "./commands/bootstrap";
+import { findMappedFunction, runMappedDomainCommand } from "./commands/mapped";
 import { runOnchainCallCommand, runOnchainSendCommand } from "./commands/onchain";
 import {
     runPolicyListCommand,
@@ -160,6 +161,13 @@ export async function executeCommand(ctx: CommandContext): Promise<CommandExecut
         return {
             commandName: "batch run",
             data: await runBatchRunCommand(ctx, executeCommand),
+        };
+    }
+
+    if (isDomainStubRoot(root) && findMappedFunction(ctx.commandPath)) {
+        return {
+            commandName: ctx.commandPath.join(" "),
+            data: await runMappedDomainCommand(ctx),
         };
     }
 

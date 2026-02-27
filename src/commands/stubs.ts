@@ -24,6 +24,7 @@ export async function runDomainStubCommand(ctx: CommandContext): Promise<JsonVal
 
     throw new CliError("COMMAND_NOT_IMPLEMENTED", `Command '${command}' is planned but not implemented yet.`, 2, {
         command,
+        hint: "If this is a mapped onchain write, pass full subcommand plus --abi-file/--address/--args-json.",
         plannedRoots: SUPPORTED_STUB_ROOTS,
     });
 }

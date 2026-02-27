@@ -147,7 +147,11 @@ export async function runOnchainCallCommand(ctx: CommandContext): Promise<JsonVa
     };
 }
 
-export async function runOnchainSendCommand(ctx: CommandContext): Promise<JsonValue> {
+export async function runOnchainSendWithFunction(
+    ctx: CommandContext,
+    forcedFunctionName?: string,
+    commandOverride?: string,
+): Promise<JsonValue> {
     const config = loadConfig();
     const profileName = getFlagString(ctx.args.flags, "profile") || ctx.globals.profile;
     const profile = getProfileOrThrow(config, profileName);
@@ -160,7 +164,7 @@ export async function runOnchainSendCommand(ctx: CommandContext): Promise<JsonVa
     const abi = parseAbiFile(abiFile);
 
     const address = parseAddress(getFlagString(ctx.args.flags, "address"), "--address");
-    const functionName = requireFlag(getFlagString(ctx.args.flags, "function"), "--function");
+    const functionName = forcedFunctionName || requireFlag(getFlagString(ctx.args.flags, "function"), "--function");
     const args = parseArgsJson(getFlagString(ctx.args.flags, "args-json"));
 
     const valueWei = parseValueWei(getFlagString(ctx.args.flags, "value-wei"));
@@ -200,7 +204,7 @@ export async function runOnchainSendCommand(ctx: CommandContext): Promise<JsonVa
         nonce,
         waitForReceipt,
         timeoutMs: parseTimeoutMs(getFlagString(ctx.args.flags, "timeout-ms")),
-        command: `onchain send ${functionName}`,
+        command: commandOverride || `onchain send ${functionName}`,
     };
 
     const result = await executeTxIntent(intent, chain);
@@ -213,4 +217,8 @@ export async function runOnchainSendCommand(ctx: CommandContext): Promise<JsonVa
         args,
         result,
     };
+}
+
+export async function runOnchainSendCommand(ctx: CommandContext): Promise<JsonValue> {
+    return runOnchainSendWithFunction(ctx);
 }

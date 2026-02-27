@@ -1,4 +1,4 @@
-import { decodeFunctionResult, encodeFunctionData } from "viem";
+import { decodeFunctionResult, encodeFunctionData, type Abi } from "viem";
 
 import { getFlagBoolean, getFlagString } from "../args";
 import { parseAbiFile } from "../abi";
@@ -127,6 +127,11 @@ export async function runOnchainSendWithFunction(
     ctx: CommandContext,
     forcedFunctionName?: string,
     commandOverride?: string,
+    defaults?: {
+        abi?: Abi;
+        address?: `0x${string}`;
+        source?: string;
+    },
 ): Promise<JsonValue> {
     const config = loadConfig();
     const profileName = getFlagString(ctx.args.flags, "profile") || ctx.globals.profile;
@@ -136,10 +141,31 @@ export async function runOnchainSendWithFunction(
     const chain = resolveChain(profile.chain);
     const rpcUrl = resolveRpcUrl(chain, getFlagString(ctx.args.flags, "rpc-url") || profile.rpcUrl);
 
-    const abiFile = requireFlag(getFlagString(ctx.args.flags, "abi-file"), "--abi-file");
-    const abi = parseAbiFile(abiFile);
+    const abiFile = getFlagString(ctx.args.flags, "abi-file");
+    const abi = abiFile
+        ? parseAbiFile(abiFile)
+        : defaults?.abi ||
+          (() => {
+              throw new CliError("MISSING_ARGUMENT", "--abi-file is required.", 2, {
+                  command: commandOverride || ctx.commandPath.join(" "),
+                  hint: forcedFunctionName
+                      ? "This mapped command has no built-in ABI metadata yet. Provide --abi-file."
+                      : "Provide --abi-file <path>.",
+              });
+          })();
 
-    const address = parseAddress(getFlagString(ctx.args.flags, "address"), "--address");
+    const addressInput = getFlagString(ctx.args.flags, "address");
+    const address = addressInput
+        ? parseAddress(addressInput, "--address")
+        : defaults?.address ||
+          (() => {
+              throw new CliError("MISSING_ARGUMENT", "--address is required.", 2, {
+                  command: commandOverride || ctx.commandPath.join(" "),
+                  hint: forcedFunctionName
+                      ? "This mapped command has no built-in contract address yet. Provide --address."
+                      : "Provide --address <0x...>.",
+              });
+          })();
     const functionName = forcedFunctionName || requireFlag(getFlagString(ctx.args.flags, "function"), "--function");
     const args = parseArgsJson(getFlagString(ctx.args.flags, "args-json"));
 
@@ -197,6 +223,11 @@ export async function runOnchainSendWithFunction(
         address,
         functionName,
         args,
+        defaults: {
+            abi: abiFile ? "flag" : defaults?.abi ? "mapped-default" : "none",
+            address: addressInput ? "flag" : defaults?.address ? "mapped-default" : "none",
+            source: defaults?.source || null,
+        },
         result,
     };
 }

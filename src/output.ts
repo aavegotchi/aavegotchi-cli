@@ -6,6 +6,7 @@ import {
     parseAbiFile,
 } from "./abi";
 import { suggestCommands } from "./command-catalog";
+import { getMappedWriteDefaults } from "./commands/mapped-defaults";
 import { findMappedFunction, listMappedCommandsForRoot } from "./commands/mapped";
 import { isDomainStubRoot } from "./commands/stubs";
 import { CliError } from "./errors";
@@ -337,6 +338,7 @@ function buildMappedCommandHelp(commandPath: string[], flags: Flags): string {
         return "";
     }
 
+    const defaults = getMappedWriteDefaults(commandPath);
     const abiFile = getFlagString(flags, "abi-file");
     const signatureLines: string[] = [];
     const inputLines: string[] = [];
@@ -357,25 +359,87 @@ function buildMappedCommandHelp(commandPath: string[], flags: Flags): string {
             const message = error instanceof Error ? error.message : "Unable to parse ABI file.";
             signatureLines.push(`Could not inspect ABI file '${abiFile}': ${message}`);
         }
+    } else if (defaults?.abi) {
+        const entries = getAbiFunctionEntries(defaults.abi, method);
+        if (entries.length === 0) {
+            signatureLines.push("Built-in ABI defaults are available, but no matching function entry was found.");
+        } else {
+            for (const entry of entries) {
+                signatureLines.push(formatAbiFunctionSignature(entry));
+                inputLines.push(...formatAbiFunctionInputs(entry));
+            }
+        }
     } else {
         signatureLines.push("Pass --abi-file <path> with --help to print exact ABI-derived signature and input names.");
     }
 
+    const requiredFlags = ["--args-json", "--profile (or active profile)"];
+    const optionalOverrides: string[] = [];
+
+    if (!defaults?.abi) {
+        requiredFlags.unshift("--abi-file");
+    } else {
+        optionalOverrides.push("--abi-file (override built-in ABI)");
+    }
+
+    if (!defaults?.address) {
+        requiredFlags.unshift("--address");
+    } else {
+        optionalOverrides.push("--address (override default)");
+    }
+
+    const usageParts = [`ag ${command}`, "--profile <name>"];
+    if (!defaults?.abi) {
+        usageParts.push("--abi-file <path>");
+    }
+    if (!defaults?.address) {
+        usageParts.push("--address <0x...>");
+    }
+    usageParts.push(
+        "--args-json '[...]'",
+        "[--value-wei <wei>]",
+        "[--nonce-policy <safe|replace|manual>]",
+        "[--nonce <n>]",
+        "[--dry-run]",
+        "[--wait]",
+        "[--json]",
+    );
+    const usage = `  ${usageParts.join(" ")}`;
+
+    const defaultLines = [
+        defaults?.address ? `address: ${defaults.address}` : "address: none",
+        defaults?.abi ? "abi: available" : "abi: none",
+        `source: ${defaults?.source || "none"}`,
+    ];
+
+    const dryRunParts = [`ag ${command}`, "--profile prod"];
+    if (!defaults?.abi) {
+        dryRunParts.push("--abi-file ./abi.json");
+    }
+    if (!defaults?.address) {
+        dryRunParts.push("--address 0xabc...");
+    }
+    dryRunParts.push("--args-json '[<arg0>,<arg1>]'", "--dry-run", "--json");
+    const dryRunExample = `  ${dryRunParts.join(" ")}`;
+
     return `
 Usage:
-  ag ${command} --profile <name> --abi-file <path> --address <0x...> --args-json '[...]' [--value-wei <wei>] [--nonce-policy <safe|replace|manual>] [--nonce <n>] [--dry-run] [--wait] [--json]
+${usage}
 
 Mapped to onchain function:
   ${method}
 
 Required flags:
-  --abi-file
-  --address
-  --args-json
-  --profile (or active profile)
+${toLines(requiredFlags)}
+
+Mapped defaults:
+${toLines(defaultLines)}
+
+Optional overrides:
+${toLines(optionalOverrides)}
 
 Dry-run example:
-  ag ${command} --profile prod --abi-file ./abi.json --address 0xabc... --args-json '[<arg0>,<arg1>]' --dry-run --json
+${dryRunExample}
 
 ABI signature info:
 ${toLines(signatureLines)}

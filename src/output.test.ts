@@ -18,6 +18,16 @@ describe("help output", () => {
         expect(text).toContain("Mapped to onchain function:");
         expect(text).toContain("buyNow");
         expect(text).toContain("--args-json");
+        expect(text).toContain("--abi-file <path> --address <0x...> --args-json");
+    });
+
+    it("prints built-in mapped defaults for auction bid without --abi-file", () => {
+        const text = buildHelpText(["auction", "bid"]);
+        expect(text).toContain("commitBid(uint256,uint256,uint256,address,uint256,uint256,bytes)");
+        expect(text).toContain("source: base.gbm-diamond");
+        expect(text).toContain("address: 0x80320a0000c7a6a34086e2acad6915ff57ffda31");
+        expect(text).toContain("ag auction bid --profile <name> --args-json");
+        expect(text).toContain("--abi-file (override built-in ABI)");
     });
 
     it("prints ABI-derived mapped function signature when --abi-file is supplied", () => {

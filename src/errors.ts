@@ -13,6 +13,12 @@ export class CliError extends Error {
     }
 }
 
+export function assertCondition(condition: boolean, code: string, message: string, details?: JsonValue): void {
+    if (!condition) {
+        throw new CliError(code, message, 2, details);
+    }
+}
+
 export function toCliError(error: unknown): CliError {
     if (error instanceof CliError) {
         return error;

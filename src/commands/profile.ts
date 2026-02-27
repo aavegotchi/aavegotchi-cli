@@ -1,5 +1,5 @@
 import { getFlagString } from "../args";
-import { getProfileOrThrow, loadConfig, saveConfig, setActiveProfile } from "../config";
+import { getPolicyOrThrow, getProfileOrThrow, loadConfig, saveConfig, setActiveProfile } from "../config";
 import { CliError } from "../errors";
 import { CommandContext, JsonValue } from "../types";
 
@@ -32,10 +32,12 @@ export async function runProfileShowCommand(ctx: CommandContext): Promise<JsonVa
     const config = loadConfig();
     const requestedProfile = resolveProfileSelection(ctx);
     const profile = getProfileOrThrow(config, requestedProfile);
+    const policy = getPolicyOrThrow(config, profile.policy);
 
     return {
         activeProfile: config.activeProfile || null,
         profile,
+        policy,
     };
 }
 
@@ -53,5 +55,18 @@ export async function runProfileUseCommand(ctx: CommandContext): Promise<JsonVal
         message: `Active profile set to '${selectedProfile}'.`,
         activeProfile: selectedProfile,
         configPath,
+    };
+}
+
+export async function runProfileExportCommand(ctx: CommandContext): Promise<JsonValue> {
+    const config = loadConfig();
+    const requestedProfile = resolveProfileSelection(ctx);
+    const profile = getProfileOrThrow(config, requestedProfile);
+    const policy = getPolicyOrThrow(config, profile.policy);
+
+    return {
+        exportedAt: new Date().toISOString(),
+        profile,
+        policy,
     };
 }

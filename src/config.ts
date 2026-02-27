@@ -3,14 +3,38 @@ import * as os from "os";
 import * as path from "path";
 
 import { CliError } from "./errors";
-import { CliConfig, ProfileConfig } from "./types";
+import { cliConfigSchema, legacyCliConfigSchema } from "./schemas";
+import { CliConfig, PolicyConfig, ProfileConfig } from "./types";
 
 const CONFIG_FILE = "config.json";
+const JOURNAL_FILE = "journal.sqlite";
+
+function nowIso(): string {
+    return new Date().toISOString();
+}
+
+export function createDefaultPolicy(name = "default", timestamp = nowIso()): PolicyConfig {
+    return {
+        name,
+        maxValueWei: undefined,
+        maxGasLimit: undefined,
+        maxFeePerGasWei: undefined,
+        maxPriorityFeePerGasWei: undefined,
+        allowedTo: undefined,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+    };
+}
 
 function createDefaultConfig(): CliConfig {
+    const timestamp = nowIso();
+
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         profiles: {},
+        policies: {
+            default: createDefaultPolicy("default", timestamp),
+        },
     };
 }
 
@@ -31,6 +55,31 @@ export function resolveConfigPath(customHome?: string): string {
     return path.join(home, CONFIG_FILE);
 }
 
+export function resolveJournalPath(customHome?: string): string {
+    const home = resolveAgcliHome(customHome);
+    return path.join(home, JOURNAL_FILE);
+}
+
+function migrateLegacyConfig(raw: unknown): CliConfig {
+    const legacy = legacyCliConfigSchema.parse(raw);
+    const base = createDefaultConfig();
+
+    const policies = { ...base.policies };
+
+    for (const profile of Object.values(legacy.profiles)) {
+        if (!policies[profile.policy]) {
+            policies[profile.policy] = createDefaultPolicy(profile.policy, profile.createdAt);
+        }
+    }
+
+    return {
+        schemaVersion: 2,
+        activeProfile: legacy.activeProfile,
+        profiles: legacy.profiles as Record<string, ProfileConfig>,
+        policies,
+    };
+}
+
 export function loadConfig(customHome?: string): CliConfig {
     const configPath = resolveConfigPath(customHome);
 
@@ -39,13 +88,31 @@ export function loadConfig(customHome?: string): CliConfig {
     }
 
     const raw = fs.readFileSync(configPath, "utf8");
-    const parsed = JSON.parse(raw) as CliConfig;
 
-    if (parsed.schemaVersion !== 1 || typeof parsed.profiles !== "object") {
-        throw new CliError("INVALID_CONFIG", `Unsupported config format in ${configPath}.`, 2);
+    let parsedJson: unknown;
+    try {
+        parsedJson = JSON.parse(raw);
+    } catch {
+        throw new CliError("INVALID_CONFIG", `Config file is not valid JSON: ${configPath}`, 2);
     }
 
-    return parsed;
+    if (
+        typeof parsedJson === "object" &&
+        parsedJson !== null &&
+        "schemaVersion" in parsedJson &&
+        (parsedJson as { schemaVersion?: number }).schemaVersion === 1
+    ) {
+        return migrateLegacyConfig(parsedJson);
+    }
+
+    const parsed = cliConfigSchema.safeParse(parsedJson);
+    if (!parsed.success) {
+        throw new CliError("INVALID_CONFIG", `Unsupported config format in ${configPath}.`, 2, {
+            issues: parsed.error.issues,
+        });
+    }
+
+    return parsed.data;
 }
 
 export function saveConfig(config: CliConfig, customHome?: string): string {
@@ -67,6 +134,16 @@ export function upsertProfile(config: CliConfig, profile: ProfileConfig): CliCon
         profiles: {
             ...config.profiles,
             [profile.name]: profile,
+        },
+    };
+}
+
+export function upsertPolicy(config: CliConfig, policy: PolicyConfig): CliConfig {
+    return {
+        ...config,
+        policies: {
+            ...config.policies,
+            [policy.name]: policy,
         },
     };
 }
@@ -94,4 +171,13 @@ export function getProfileOrThrow(config: CliConfig, profileName?: string): Prof
     }
 
     return profile;
+}
+
+export function getPolicyOrThrow(config: CliConfig, policyName: string): PolicyConfig {
+    const policy = config.policies[policyName];
+    if (!policy) {
+        throw new CliError("POLICY_NOT_FOUND", `Policy '${policyName}' does not exist.`, 2);
+    }
+
+    return policy;
 }

@@ -41,8 +41,15 @@ describe("agcli config", () => {
         const home = createHome();
 
         const initial: CliConfig = {
-            schemaVersion: 1,
+            schemaVersion: 2,
             profiles: {},
+            policies: {
+                default: {
+                    name: "default",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                },
+            },
         };
 
         const withProfile = upsertProfile(initial, createProfile("prod"));
@@ -52,8 +59,10 @@ describe("agcli config", () => {
 
         const loaded = loadConfig(home);
 
+        expect(loaded.schemaVersion).toBe(2);
         expect(loaded.activeProfile).toBe("prod");
         expect(loaded.profiles.prod.chainId).toBe(8453);
+        expect(loaded.policies.default.name).toBe("default");
     });
 
     it("returns defaults when config does not exist", () => {
@@ -61,8 +70,31 @@ describe("agcli config", () => {
 
         const loaded = loadConfig(home);
 
-        expect(loaded.schemaVersion).toBe(1);
+        expect(loaded.schemaVersion).toBe(2);
         expect(loaded.activeProfile).toBeUndefined();
         expect(loaded.profiles).toEqual({});
+        expect(loaded.policies.default).toBeDefined();
+    });
+
+    it("migrates legacy schemaVersion=1 config", () => {
+        const home = createHome();
+        const configPath = path.join(home, "config.json");
+
+        const legacy = {
+            schemaVersion: 1,
+            activeProfile: "prod",
+            profiles: {
+                prod: createProfile("prod"),
+            },
+        };
+
+        fs.mkdirSync(home, { recursive: true });
+        fs.writeFileSync(configPath, JSON.stringify(legacy, null, 2));
+
+        const loaded = loadConfig(home);
+
+        expect(loaded.schemaVersion).toBe(2);
+        expect(loaded.activeProfile).toBe("prod");
+        expect(loaded.policies.default).toBeDefined();
     });
 });

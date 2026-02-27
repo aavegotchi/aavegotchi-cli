@@ -1,9 +1,17 @@
-import { getFlagString } from "../args";
-import { resolveChain, resolveRpcUrl } from "../chains";
-import { loadConfig, saveConfig, setActiveProfile, upsertProfile } from "../config";
+import { getFlagBoolean, getFlagString } from "../args";
+import { resolveChain, resolveRpcUrl, toViemChain } from "../chains";
+import {
+    createDefaultPolicy,
+    getPolicyOrThrow,
+    loadConfig,
+    saveConfig,
+    setActiveProfile,
+    upsertPolicy,
+    upsertProfile,
+} from "../config";
 import { CliError } from "../errors";
 import { runRpcPreflight } from "../rpc";
-import { parseSigner, resolveSignerAccount } from "../signer";
+import { parseSigner, resolveSignerRuntime } from "../signer";
 import { CommandContext, JsonValue, ProfileConfig } from "../types";
 
 function getRequiredProfileName(ctx: CommandContext): string {
@@ -22,32 +30,49 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
     const chainInput = getFlagString(ctx.args.flags, "chain");
     const rpcFlag = getFlagString(ctx.args.flags, "rpc-url");
     const signerInput = getFlagString(ctx.args.flags, "signer") || "readonly";
-    const policy = getFlagString(ctx.args.flags, "policy") || "default";
+    const policyName = getFlagString(ctx.args.flags, "policy") || "default";
+    const skipSignerCheck = getFlagBoolean(ctx.args.flags, "skip-signer-check");
 
     const chain = resolveChain(chainInput);
     const rpcUrl = resolveRpcUrl(chain, rpcFlag);
 
-    const preflight = await runRpcPreflight(rpcUrl, chain.chainId);
+    const preflight = await runRpcPreflight(chain, rpcUrl);
     const signer = parseSigner(signerInput);
-    const signerAccount = await resolveSignerAccount(signer, preflight.provider);
+
+    let signerSummary: JsonValue = {
+        signerType: signer.type,
+        backendStatus: "not-checked",
+    };
+
+    if (!skipSignerCheck) {
+        const signerRuntime = await resolveSignerRuntime(signer, preflight.client, rpcUrl, toViemChain(chain, rpcUrl));
+        signerSummary = signerRuntime.summary;
+    }
 
     const now = new Date().toISOString();
     const config = loadConfig();
 
-    const existing = config.profiles[profileName];
+    const existingProfile = config.profiles[profileName];
     const profile: ProfileConfig = {
         name: profileName,
         chain: chain.key,
         chainId: preflight.chainId,
         rpcUrl,
         signer,
-        policy,
-        createdAt: existing?.createdAt || now,
+        policy: policyName,
+        createdAt: existingProfile?.createdAt || now,
         updatedAt: now,
     };
 
-    const upserted = upsertProfile(config, profile);
-    const activated = setActiveProfile(upserted, profileName);
+    const withProfile = upsertProfile(config, profile);
+    const withPolicy = withProfile.policies[policyName]
+        ? withProfile
+        : upsertPolicy(withProfile, createDefaultPolicy(policyName, now));
+
+    // Validate policy existence after potential creation.
+    getPolicyOrThrow(withPolicy, policyName);
+
+    const activated = setActiveProfile(withPolicy, profileName);
     const configPath = saveConfig(activated);
 
     return {
@@ -60,7 +85,11 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
             signer: profile.signer,
             policy: profile.policy,
         },
-        account: signerAccount,
+        rpc: {
+            blockNumber: preflight.blockNumber,
+            chainName: preflight.chainName,
+        },
+        signer: signerSummary,
         configPath,
     };
 }

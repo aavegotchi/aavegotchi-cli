@@ -1,6 +1,20 @@
 import { CliError } from "./errors";
 import { GlobalOptions, JsonValue, OutputEnvelope } from "./types";
 
+function stringifyWithBigInt(input: unknown): string {
+    return JSON.stringify(
+        input,
+        (_, value) => {
+            if (typeof value === "bigint") {
+                return value.toString();
+            }
+
+            return value;
+        },
+        2,
+    );
+}
+
 function buildMeta(mode: GlobalOptions["mode"]): OutputEnvelope["meta"] {
     return {
         timestamp: new Date().toISOString(),
@@ -18,12 +32,12 @@ export function outputSuccess(command: string, data: JsonValue, globals: GlobalO
             meta: buildMeta(globals.mode),
         };
 
-        console.log(JSON.stringify(envelope, null, 2));
+        console.log(stringifyWithBigInt(envelope));
         return;
     }
 
     console.log(`[ok] ${command}`);
-    console.log(JSON.stringify(data, null, 2));
+    console.log(stringifyWithBigInt(data));
 }
 
 export function outputError(command: string, error: CliError, globals: GlobalOptions): void {
@@ -40,13 +54,13 @@ export function outputError(command: string, error: CliError, globals: GlobalOpt
             meta: buildMeta(globals.mode),
         };
 
-        console.error(JSON.stringify(envelope, null, 2));
+        console.error(stringifyWithBigInt(envelope));
         return;
     }
 
     console.error(`[error:${error.code}] ${error.message}`);
     if (error.details) {
-        console.error(JSON.stringify(error.details, null, 2));
+        console.error(stringifyWithBigInt(error.details));
     }
 }
 
@@ -57,28 +71,45 @@ Aavegotchi CLI (agent-first foundation)
 Usage:
   ag <command> [options]
 
-Commands:
-  bootstrap                   Create/update and activate a profile with RPC/signer preflight
-  profile list                List profiles
-  profile show [--profile]    Show a profile (or active profile)
-  profile use --profile NAME  Set active profile
-  rpc check [--profile NAME]  Verify current RPC and chain connectivity
+Core commands:
+  bootstrap                         Create/update and activate a profile with RPC/signer preflight
+  profile list|show|use|export      Manage profiles
+  policy list|show|upsert           Manage transaction policies
+  rpc check                          Verify RPC connectivity + signer backend health
+
+Tx commands:
+  tx send                            Send a raw EVM transaction with simulation + policy checks + journaling
+  tx status                          Read tx status by idempotency key/hash or list recent
+  tx resume                          Resume waiting for a previously submitted tx
+  tx watch                           Poll journal until tx is confirmed
+
+Automation commands:
+  batch run --file plan.yaml         Run a YAML execution plan (dependency-aware)
+
+Power-user commands:
+  onchain call                       Call any ABI function from --abi-file
+  onchain send                       Send any ABI function as a transaction
+
+Planned domain namespaces (stubbed):
+  gotchi, portal, wearables, items, inventory, baazaar, lending, realm, alchemica, forge, token
 
 Global flags:
-  --mode <agent|human>        Agent mode implies --json --yes
-  --json, -j                  Emit JSON envelope output
-  --yes, -y                   Skip confirmation prompts (reserved for next write commands)
-  --profile NAME              Select profile globally
+  --mode <agent|human>               Agent mode implies --json --yes
+  --json, -j                         Emit JSON envelope output
+  --yes, -y                          Skip prompts (write commands assume explicit flags)
+  --profile NAME                     Select profile globally
 
 Bootstrap flags:
-  --profile NAME              Profile to create or update (required)
-  --chain base|base-sepolia   Chain key (default: base)
-  --rpc-url URL               RPC endpoint (optional when chain preset exists)
-  --signer readonly|env:VAR   Signer backend (default: readonly)
-  --policy NAME               Policy label (default: default)
+  --profile NAME                     Profile to create or update (required)
+  --chain base|base-sepolia|<id>     Chain key or numeric chain id (default: base)
+  --rpc-url URL                      RPC endpoint (optional when chain preset exists)
+  --signer readonly|env:VAR|keychain:<id>|ledger[:path]|remote:<url>
+  --policy NAME                      Policy label (default: default)
+  --skip-signer-check                Persist signer config without backend validation
 
 Examples:
   ag bootstrap --mode agent --profile prod --chain base --signer env:AGCLI_PRIVATE_KEY --json
-  ag profile list --json
+  ag tx send --profile prod --to 0xabc... --value-wei 1000000000000000 --wait --json
+  ag batch run --file ./plan.yaml --json
 `);
 }

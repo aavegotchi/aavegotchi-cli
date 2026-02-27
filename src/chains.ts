@@ -1,9 +1,13 @@
+import { defineChain, type Chain } from "viem";
+import { base, baseSepolia } from "viem/chains";
+
 import { CliError } from "./errors";
 
 interface ChainPreset {
     key: string;
     chainId: number;
     defaultRpcUrl: string;
+    viemChain: Chain;
 }
 
 const CHAIN_PRESETS: Record<string, ChainPreset> = {
@@ -11,11 +15,13 @@ const CHAIN_PRESETS: Record<string, ChainPreset> = {
         key: "base",
         chainId: 8453,
         defaultRpcUrl: "https://mainnet.base.org",
+        viemChain: base,
     },
     "base-sepolia": {
         key: "base-sepolia",
         chainId: 84532,
         defaultRpcUrl: "https://sepolia.base.org",
+        viemChain: baseSepolia,
     },
 };
 
@@ -69,4 +75,26 @@ export function resolveRpcUrl(chain: ResolvedChain, rpcFlag?: string): string {
     }
 
     throw new CliError("MISSING_RPC_URL", "RPC URL is required for custom chain IDs.", 2);
+}
+
+export function toViemChain(chain: ResolvedChain, rpcUrl: string): Chain {
+    const preset = CHAIN_PRESETS[chain.key];
+    if (preset) {
+        return preset.viemChain;
+    }
+
+    return defineChain({
+        id: chain.chainId,
+        name: chain.key,
+        nativeCurrency: {
+            name: "Ether",
+            symbol: "ETH",
+            decimals: 18,
+        },
+        rpcUrls: {
+            default: {
+                http: [rpcUrl],
+            },
+        },
+    });
 }

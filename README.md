@@ -186,5 +186,12 @@ npm run typecheck
 npm test
 npm run build
 npm run parity:check
+npm run smoke:readonly
 npm run ag -- help
 ```
+
+Read-only smoke test notes:
+
+- `npm run smoke:readonly` runs a full networked read-only command matrix against Base + Goldsky.
+- To run the matrix against a specific installed binary instead of local source:
+  - `AG_BIN=/absolute/path/to/ag npm run smoke:readonly`

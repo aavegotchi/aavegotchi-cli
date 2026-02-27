@@ -9,6 +9,9 @@ import { SignerConfig } from "./types";
 
 const REMOTE_SIGN_ADDRESS_PATH = "/address";
 const REMOTE_SIGN_TX_PATH = "/sign-transaction";
+const BANKR_DEFAULT_API_URL = "https://api.bankr.bot";
+const BANKR_AGENT_ME_PATH = "/agent/me";
+const BANKR_AGENT_SUBMIT_PATH = "/agent/submit";
 
 export interface SignerSendRequest {
     chain: Chain;
@@ -116,6 +119,143 @@ function buildRemoteHeaders(signer: Extract<SignerConfig, { type: "remote" }>): 
     }
 
     return headers;
+}
+
+function requireEnvVarName(value: string, context: string): string {
+    if (!/^[A-Z_][A-Z0-9_]*$/.test(value)) {
+        throw new CliError("INVALID_SIGNER_SPEC", `Invalid ${context} env var '${value}'.`, 2);
+    }
+
+    return value;
+}
+
+function resolveBankrApiUrl(signer: Extract<SignerConfig, { type: "bankr" }>): string {
+    return (signer.apiUrl || BANKR_DEFAULT_API_URL).replace(/\/+$/, "");
+}
+
+function buildBankrHeaders(signer: Extract<SignerConfig, { type: "bankr" }>): Record<string, string> {
+    const envVar = signer.apiKeyEnvVar || "BANKR_API_KEY";
+    const token = process.env[envVar];
+    if (!token) {
+        throw new CliError("MISSING_SIGNER_SECRET", `Missing environment variable '${envVar}'.`, 2);
+    }
+
+    return {
+        "content-type": "application/json",
+        "x-api-key": token,
+    };
+}
+
+async function fetchBankrJson(url: string, init?: RequestInit): Promise<unknown> {
+    let response: Response;
+    try {
+        response = await fetch(url, init);
+    } catch (error) {
+        throw new CliError("BANKR_API_UNREACHABLE", "Failed to connect to Bankr API.", 2, {
+            url,
+            message: error instanceof Error ? error.message : String(error),
+        });
+    }
+
+    const text = await response.text();
+    let parsed: unknown = {};
+    if (text) {
+        try {
+            parsed = JSON.parse(text);
+        } catch {
+            parsed = text;
+        }
+    }
+
+    if (!response.ok) {
+        throw new CliError("BANKR_API_HTTP_ERROR", `Bankr API responded with HTTP ${response.status}.`, 2, {
+            url,
+            status: response.status,
+            body: parsed,
+        });
+    }
+
+    return parsed;
+}
+
+function parseBankrAddressCandidate(candidate: unknown): `0x${string}` | undefined {
+    if (typeof candidate !== "string") {
+        return undefined;
+    }
+
+    if (!/^0x[a-fA-F0-9]{40}$/.test(candidate)) {
+        return undefined;
+    }
+
+    return candidate.toLowerCase() as `0x${string}`;
+}
+
+async function resolveBankrAddress(
+    signer: Extract<SignerConfig, { type: "bankr" }>,
+    headers: Record<string, string>,
+): Promise<`0x${string}`> {
+    if (signer.address) {
+        return ensureAddress(signer.address, "bankr signer address");
+    }
+
+    const apiUrl = resolveBankrApiUrl(signer);
+    const response = (await fetchBankrJson(addDefaultPaths(apiUrl, BANKR_AGENT_ME_PATH), {
+        method: "GET",
+        headers,
+    })) as {
+        walletAddress?: unknown;
+        address?: unknown;
+        agent?: { walletAddress?: unknown; address?: unknown };
+        wallets?: Array<{ address?: unknown; walletAddress?: unknown; chain?: unknown }>;
+    };
+
+    const direct =
+        parseBankrAddressCandidate(response.walletAddress) ||
+        parseBankrAddressCandidate(response.address) ||
+        parseBankrAddressCandidate(response.agent?.walletAddress) ||
+        parseBankrAddressCandidate(response.agent?.address);
+
+    if (direct) {
+        return direct;
+    }
+
+    if (Array.isArray(response.wallets)) {
+        const evmWallet = response.wallets.find((wallet) => wallet.chain === "evm");
+        const evmAddress = parseBankrAddressCandidate(evmWallet?.address) || parseBankrAddressCandidate(evmWallet?.walletAddress);
+        if (evmAddress) {
+            return evmAddress;
+        }
+
+        for (const wallet of response.wallets) {
+            const anyAddress =
+                parseBankrAddressCandidate(wallet.address) || parseBankrAddressCandidate(wallet.walletAddress);
+            if (anyAddress) {
+                return anyAddress;
+            }
+        }
+    }
+
+    throw new CliError("BANKR_API_PROTOCOL_ERROR", "Bankr /agent/me response missing wallet address.", 2, {
+        keys: Object.keys(response),
+    });
+}
+
+function parseBankrSubmitHash(response: unknown): `0x${string}` | undefined {
+    if (typeof response !== "object" || response === null) {
+        return undefined;
+    }
+
+    const root = response as Record<string, unknown>;
+    const nested = typeof root.result === "object" && root.result !== null ? (root.result as Record<string, unknown>) : undefined;
+
+    return (
+        parseTxHash(root.transactionHash) ||
+        parseTxHash(root.txHash) ||
+        parseTxHash(root.hash) ||
+        parseTxHash(nested?.transactionHash) ||
+        parseTxHash(nested?.txHash) ||
+        parseTxHash(nested?.hash)
+    );
 }
 
 async function resolveRemoteAddress(
@@ -247,6 +387,59 @@ function parseSignerLedgerSpec(value: string): Extract<SignerConfig, { type: "le
     return signer;
 }
 
+function parseSignerBankrSpec(value: string): Extract<SignerConfig, { type: "bankr" }> {
+    if (value === "bankr") {
+        return { type: "bankr" };
+    }
+
+    const body = value.slice("bankr:".length).trim();
+    const signer: Extract<SignerConfig, { type: "bankr" }> = {
+        type: "bankr",
+    };
+
+    if (!body) {
+        return signer;
+    }
+
+    if (!body.includes("|")) {
+        if (/^0x[a-fA-F0-9]{40}$/.test(body)) {
+            signer.address = ensureAddress(body, "bankr signer address");
+            return signer;
+        }
+
+        if (/^[A-Z_][A-Z0-9_]*$/.test(body)) {
+            signer.apiKeyEnvVar = requireEnvVarName(body, "bankr api key");
+            return signer;
+        }
+
+        if (/^https?:\/\//i.test(body)) {
+            signer.apiUrl = body;
+            return signer;
+        }
+
+        throw new CliError("INVALID_SIGNER_SPEC", `Invalid bankr signer format '${value}'.`, 2);
+    }
+
+    const [addressPart, apiKeyEnvVarPart, apiUrlPart] = body.split("|").map((entry) => entry.trim());
+
+    if (addressPart) {
+        signer.address = ensureAddress(addressPart, "bankr signer address");
+    }
+
+    if (apiKeyEnvVarPart) {
+        signer.apiKeyEnvVar = requireEnvVarName(apiKeyEnvVarPart, "bankr api key");
+    }
+
+    if (apiUrlPart) {
+        if (!/^https?:\/\//i.test(apiUrlPart)) {
+            throw new CliError("INVALID_SIGNER_SPEC", `Invalid bankr API URL in '${value}'.`, 2);
+        }
+        signer.apiUrl = apiUrlPart;
+    }
+
+    return signer;
+}
+
 export function parseSigner(value?: string): SignerConfig {
     if (!value || value === "readonly") {
         return { type: "readonly" };
@@ -284,9 +477,13 @@ export function parseSigner(value?: string): SignerConfig {
         return parseSignerRemoteSpec(value);
     }
 
+    if (value === "bankr" || value.startsWith("bankr:")) {
+        return parseSignerBankrSpec(value);
+    }
+
     throw new CliError(
         "INVALID_SIGNER_SPEC",
-        `Unsupported signer '${value}'. Use readonly, env:<ENV_VAR>, keychain:<id>, ledger[:path|address|bridgeEnv], or remote:<url|address|authEnv>.`,
+        `Unsupported signer '${value}'. Use readonly, env:<ENV_VAR>, keychain:<id>, ledger[:path|address|bridgeEnv], remote:<url|address|authEnv>, or bankr[:address|apiKeyEnv|apiUrl].`,
         2,
     );
 }
@@ -411,6 +608,49 @@ export async function resolveSignerRuntime(
                 }
 
                 throw new CliError("REMOTE_SIGNER_PROTOCOL_ERROR", "Remote signer response missing txHash/rawTransaction.", 2);
+            },
+        };
+    }
+
+    if (signer.type === "bankr") {
+        const apiUrl = resolveBankrApiUrl(signer);
+        const headers = buildBankrHeaders(signer);
+        const address = await resolveBankrAddress(signer, headers);
+        const summary = await resolveBalanceSummary("bankr", publicClient, address);
+
+        return {
+            summary,
+            sendTransaction: async (request) => {
+                const payload = {
+                    transaction: {
+                        chainId: request.chain.id,
+                        from: address,
+                        to: request.to,
+                        data: request.data,
+                        value: request.value?.toString() || "0",
+                        gas: request.gas.toString(),
+                        nonce: request.nonce,
+                        maxFeePerGas: request.maxFeePerGas?.toString(),
+                        maxPriorityFeePerGas: request.maxPriorityFeePerGas?.toString(),
+                    },
+                    waitForConfirmation: false,
+                    description: "Submitted via aavegotchi-cli",
+                };
+
+                const response = await fetchBankrJson(addDefaultPaths(apiUrl, BANKR_AGENT_SUBMIT_PATH), {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(payload),
+                });
+
+                const txHash = parseBankrSubmitHash(response);
+                if (txHash) {
+                    return txHash;
+                }
+
+                throw new CliError("BANKR_API_PROTOCOL_ERROR", "Bankr submit response missing transaction hash.", 2, {
+                    response,
+                });
             },
         };
     }

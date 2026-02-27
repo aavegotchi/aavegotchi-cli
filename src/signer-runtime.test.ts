@@ -20,6 +20,8 @@ const tempFiles: string[] = [];
 afterEach(() => {
     delete process.env.AGCLI_REMOTE_TOKEN;
     delete process.env.AGCLI_LEDGER_BRIDGE_CMD;
+    delete process.env.BANKR_API_KEY;
+    delete process.env.BANKR_TEST_KEY;
 
     for (const file of tempFiles.splice(0)) {
         fs.rmSync(file, { force: true });
@@ -133,5 +135,80 @@ describe("signer runtime", () => {
         });
 
         expect(hash).toBe("0x" + "c".repeat(64));
+    });
+
+    it("supports bankr signer with wallet auto-discovery", async () => {
+        process.env.BANKR_API_KEY = "bankr-token";
+
+        const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+            if (url.endsWith("/agent/me")) {
+                expect((init?.headers as Record<string, string>)["x-api-key"]).toBe("bankr-token");
+                return {
+                    ok: true,
+                    text: async () => JSON.stringify({ walletAddress: "0x0000000000000000000000000000000000000001" }),
+                };
+            }
+
+            expect(url.endsWith("/agent/submit")).toBe(true);
+            expect((init?.headers as Record<string, string>)["x-api-key"]).toBe("bankr-token");
+            const body = JSON.parse(String(init?.body));
+            expect(body.waitForConfirmation).toBe(false);
+            expect(body.transaction.to).toBe("0x0000000000000000000000000000000000000001");
+            return {
+                ok: true,
+                text: async () => JSON.stringify({ transactionHash: "0x" + "e".repeat(64) }),
+            };
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const signer = parseSigner("bankr");
+        const runtime = await resolveSignerRuntime(signer, fakePublicClient(), "https://mainnet.base.org", base);
+
+        expect(runtime.summary.signerType).toBe("bankr");
+        expect(runtime.summary.address).toBe("0x0000000000000000000000000000000000000001");
+        expect(runtime.summary.canSign).toBe(true);
+
+        const hash = await runtime.sendTransaction!({
+            chain: base,
+            to: "0x0000000000000000000000000000000000000001",
+            data: "0x",
+            value: 0n,
+            gas: 21000n,
+            nonce: 1,
+        });
+
+        expect(hash).toBe("0x" + "e".repeat(64));
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("supports bankr signer with explicit address and custom api key env var", async () => {
+        process.env.BANKR_TEST_KEY = "bankr-token";
+
+        const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+            expect(url).toBe("https://api.bankr.bot/agent/submit");
+            expect((init?.headers as Record<string, string>)["x-api-key"]).toBe("bankr-token");
+            return {
+                ok: true,
+                text: async () => JSON.stringify({ txHash: "0x" + "f".repeat(64) }),
+            };
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const signer = parseSigner(
+            "bankr:0x0000000000000000000000000000000000000001|BANKR_TEST_KEY|https://api.bankr.bot",
+        );
+        const runtime = await resolveSignerRuntime(signer, fakePublicClient(), "https://mainnet.base.org", base);
+
+        const hash = await runtime.sendTransaction!({
+            chain: base,
+            to: "0x0000000000000000000000000000000000000001",
+            data: "0x",
+            value: 0n,
+            gas: 21000n,
+            nonce: 1,
+        });
+
+        expect(hash).toBe("0x" + "f".repeat(64));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

@@ -39,6 +39,17 @@ function buildSignerConfig(ctx: CommandContext, signerInput: string): ProfileCon
         };
     }
 
+    if (signer.type === "bankr") {
+        const address = getFlagString(ctx.args.flags, "signer-address");
+        const apiKeyEnvVar = getFlagString(ctx.args.flags, "signer-auth-env-var");
+
+        return {
+            ...signer,
+            ...(address ? { address: address as `0x${string}` } : {}),
+            ...(apiKeyEnvVar ? { apiKeyEnvVar } : {}),
+        };
+    }
+
     if (signer.type === "ledger") {
         const address = getFlagString(ctx.args.flags, "signer-address");
         const bridgeCommandEnvVar = getFlagString(ctx.args.flags, "signer-bridge-env-var");

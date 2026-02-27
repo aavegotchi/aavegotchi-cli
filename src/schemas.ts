@@ -21,6 +21,12 @@ export const signerSchema = z.discriminatedUnion("type", [
         address: addressSchema.optional(),
         authEnvVar: z.string().regex(/^[A-Z_][A-Z0-9_]*$/).optional(),
     }),
+    z.object({
+        type: z.literal("bankr"),
+        address: addressSchema.optional(),
+        apiKeyEnvVar: z.string().regex(/^[A-Z_][A-Z0-9_]*$/).optional(),
+        apiUrl: z.string().url().optional(),
+    }),
 ]);
 
 export const policySchema = z.object({

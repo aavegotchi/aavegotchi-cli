@@ -10,6 +10,7 @@ import {
     upsertProfile,
 } from "../config";
 import { CliError } from "../errors";
+import { applySignerEnvironment } from "../profile-env";
 import { runRpcPreflight } from "../rpc";
 import { parseSigner, resolveSignerRuntime } from "../signer";
 import { CommandContext, JsonValue, ProfileConfig } from "../types";
@@ -69,6 +70,7 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
     const chainInput = getFlagString(ctx.args.flags, "chain");
     const rpcFlag = getFlagString(ctx.args.flags, "rpc-url");
     const signerInput = getFlagString(ctx.args.flags, "signer") || "readonly";
+    const envFile = getFlagString(ctx.args.flags, "env-file");
     const policyName = getFlagString(ctx.args.flags, "policy") || "default";
     const skipSignerCheck = getFlagBoolean(ctx.args.flags, "skip-signer-check");
 
@@ -77,6 +79,7 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
 
     const preflight = await runRpcPreflight(chain, rpcUrl);
     const signer = buildSignerConfig(ctx, signerInput);
+    const environment = applySignerEnvironment(signer, { envFile });
 
     let signerSummary: JsonValue = {
         signerType: signer.type,
@@ -98,6 +101,7 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
         chainId: preflight.chainId,
         rpcUrl,
         signer,
+        ...(envFile ? { envFile } : {}),
         policy: policyName,
         createdAt: existingProfile?.createdAt || now,
         updatedAt: now,
@@ -129,6 +133,7 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
             chainName: preflight.chainName,
         },
         signer: signerSummary,
+        environment,
         configPath,
     };
 }

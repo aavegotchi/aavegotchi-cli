@@ -46,6 +46,7 @@ npm run ag -- bootstrap --mode agent --profile prod --chain base --signer readon
 - `subgraph list|check|query`
 - `baazaar listing get|active|mine` (subgraph-first read wrappers)
 - `auction get|active|mine|bids|bids-mine` (subgraph-first read wrappers)
+- `auction bid|bid-unbid` (first-class write UX)
 - `<domain> read` (routes to generic onchain call for that domain)
 
 Planned domain namespaces are stubbed for parity tracking:
@@ -54,7 +55,7 @@ Planned domain namespaces are stubbed for parity tracking:
 
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
 Mapped writes now include built-in ABI defaults, so `--abi-file` is no longer required for mapped command execution/help.
-Example with built-in defaults: `ag auction bid --args-json '[...]' --dry-run --json`
+Example with built-in defaults: `ag baazaar buy-now --args-json '[...]' --dry-run --json`
 Example with explicit metadata: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
 
 ## Command help and discoverability
@@ -71,7 +72,6 @@ Mapped write commands now expose their onchain function mapping, defaults (if av
 
 ```bash
 ag baazaar buy-now --help
-ag auction bid --help
 ```
 
 If you provide `--abi-file` with `--help`, the CLI prints ABI-derived function signature and input names for the mapped method:
@@ -171,6 +171,27 @@ Raw GraphQL passthrough (typed projection remains included):
 npm run ag -- auction active --first 5 --raw --json
 ```
 
+## First-class auction bidding
+
+Single auction bid (no manual ABI/address/arg packing):
+
+```bash
+npm run ag -- auction bid --auction-id 5666 --amount-ghst 1 --dry-run --json
+```
+
+Bid all currently unbid auctions up to a max total:
+
+```bash
+npm run ag -- auction bid-unbid --amount-ghst 1 --max-total-ghst 10 --dry-run --json
+```
+
+Notes:
+
+- `auction bid` resolves GBM diamond + ABI internally.
+- Preflight checks include auction-open state, expected/unbid checks, minimum bid, GHST balance, and GHST allowance.
+- `--auto-approve` can submit GHST `approve()` automatically when allowance is insufficient.
+- `auction bid-unbid` emits per-auction results and explicit skip reasons in one JSON report.
+
 ## Signer backends
 
 - `readonly` (read-only mode)
@@ -179,6 +200,7 @@ npm run ag -- auction active --first 5 --raw --json
 - `remote:URL|ADDRESS|AUTH_ENV` (HTTP signer service)
 - `ledger:DERIVATION_PATH|ADDRESS|BRIDGE_ENV` (external bridge command signer)
 - `bankr[:ADDRESS|API_KEY_ENV|API_URL]` (Bankr-native signer via `/agent/me` + `/agent/submit`; defaults: `BANKR_API_KEY`, `https://api.bankr.bot`)
+- Optional profile env file support (`bootstrap --env-file <path>`) plus Bankr auto-discovery (`$AGCLI_BANKR_ENV_FILE`, `$AGCLI_HOME/bankr.env`, `$AGCLI_HOME/.env.bankr`, `~/.config/openclaw/bankr.env`, `./.env.bankr`, `./bankr.env`)
 
 Remote signer contract:
 
@@ -195,7 +217,7 @@ Bankr bootstrap example:
 
 ```bash
 BANKR_API_KEY=... \
-npm run ag -- bootstrap --mode agent --profile bankr --chain base --signer bankr --json
+npm run ag -- bootstrap --mode agent --profile bankr --chain base --signer bankr --env-file ~/.config/openclaw/bankr.env --json
 ```
 
 Ledger bridge contract:

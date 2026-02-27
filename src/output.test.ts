@@ -30,13 +30,12 @@ describe("help output", () => {
         expect(text).toContain("--abi-file (override built-in ABI)");
     });
 
-    it("prints built-in mapped defaults for auction bid without --abi-file", () => {
+    it("prints first-class help for auction bid", () => {
         const text = buildHelpText(["auction", "bid"]);
-        expect(text).toContain("commitBid(uint256,uint256,uint256,address,uint256,uint256,bytes)");
-        expect(text).toContain("source: base.gbm-diamond");
-        expect(text).toContain("address: 0x80320a0000c7a6a34086e2acad6915ff57ffda31");
-        expect(text).toContain("ag auction bid --profile <name> --args-json");
-        expect(text).toContain("--abi-file (override built-in ABI)");
+        expect(text).toContain("ag auction bid --auction-id <auctionId>");
+        expect(text).toContain("--amount-ghst <amount>");
+        expect(text).toContain("--auto-approve");
+        expect(text).toContain("Resolves GBM diamond + ABI internally");
     });
 
     it("prints ABI-derived mapped function signature when --abi-file is supplied", () => {

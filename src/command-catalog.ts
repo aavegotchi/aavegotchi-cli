@@ -34,6 +34,8 @@ const BUILTIN_COMMANDS = [
     "auction mine",
     "auction bids",
     "auction bids-mine",
+    "auction bid",
+    "auction bid-unbid",
 ] as const;
 
 function listDomainReadCommands(): string[] {
@@ -76,11 +78,11 @@ function levenshteinDistance(a: string, b: string): number {
 }
 
 export function listKnownCommands(): string[] {
-    return [
+    return [...new Set([
         ...BUILTIN_COMMANDS,
         ...listDomainReadCommands(),
         ...listMappedCommands(),
-    ];
+    ])];
 }
 
 export function suggestCommands(input: string, max = 5): string[] {

@@ -46,6 +46,7 @@ export const profileSchema = z.object({
     chainId: z.number().int().positive(),
     rpcUrl: z.string().url(),
     signer: signerSchema,
+    envFile: z.string().min(1).optional(),
     policy: z.string().min(1),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),

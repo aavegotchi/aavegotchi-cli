@@ -2,15 +2,26 @@
 
 ## Unreleased
 
+## 0.2.5 - 2026-02-27
+
 ### Added
 
-- Built-in ABI defaults for all mapped write commands, removing the need to manually look up ABI signatures for mapped execution and `--help`.
+- First-class auction bid UX (no manual ABI/address/args):
+  - `ag auction bid --auction-id <id> --amount-ghst <amount> [--dry-run]`
+  - internal GBM diamond + ABI resolution for `commitBid`
+  - preflight checks for auction-open state, expected/unbid status, minimum bid, GHST balance, and GHST allowance
+- Batch-native unbid flow:
+  - `ag auction bid-unbid --amount-ghst <amount> --max-total-ghst <amount> [--dry-run]`
+  - per-auction summary and explicit skip reasons
+- Bankr environment ergonomics:
+  - profile-level env file support via `bootstrap --env-file <path>`
+  - Bankr env auto-discovery (`AGCLI_BANKR_ENV_FILE`, `AGCLI_HOME` defaults, `~/.config/openclaw/bankr.env`, local `.env.bankr`/`bankr.env`)
 
 ### Changed
 
-- Expanded mapped metadata coverage beyond auctions:
-  - canonical Base addresses now auto-resolve for high-confidence command families (Aavegotchi diamond, GBM diamond, Forge diamond, GLTR staking, Merkle distributor).
-  - command families with dynamic target contracts still auto-resolve ABI and only require `--address`.
+- Added optional GHST auto-approve path for auction bidding (`--auto-approve`).
+- Added race-safe auction submit behavior by rechecking auction highest bid/bidder immediately before send.
+- Improved simulation revert decoding with structured `reasonCode` details (for example: `INSUFFICIENT_ALLOWANCE`, `BID_BELOW_START`, `AUCTION_STATE_CHANGED`).
 
 ## 0.2.4 - 2026-02-27
 

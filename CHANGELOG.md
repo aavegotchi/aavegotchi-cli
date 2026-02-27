@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.2 - 2026-02-27
+
 ### Added
 
 - Command-targeted help:

@@ -189,6 +189,11 @@ export async function runOnchainSendWithFunction(
     }
 
     const waitForReceipt = getFlagBoolean(ctx.args.flags, "wait");
+    const dryRun = getFlagBoolean(ctx.args.flags, "dry-run");
+
+    if (dryRun && waitForReceipt) {
+        throw new CliError("INVALID_ARGUMENT", "--dry-run cannot be combined with --wait.", 2);
+    }
 
     const intent: TxIntent = {
         idempotencyKey: getFlagString(ctx.args.flags, "idempotency-key"),
@@ -203,6 +208,7 @@ export async function runOnchainSendWithFunction(
         noncePolicy: noncePolicyRaw as TxIntent["noncePolicy"],
         nonce,
         waitForReceipt,
+        dryRun,
         timeoutMs: parseTimeoutMs(getFlagString(ctx.args.flags, "timeout-ms")),
         command: commandOverride || `onchain send ${functionName}`,
     };

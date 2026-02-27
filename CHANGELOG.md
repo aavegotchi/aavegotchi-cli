@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1 - 2026-02-27
+
+### Added
+
+- `--dry-run` mode for write surfaces:
+  - `ag tx send --dry-run`
+  - `ag onchain send --dry-run`
+  - mapped writes (for example `ag token approve --dry-run`)
+- `scripts/smoke-write-dryrun.sh` and npm script `smoke:write-dryrun` for automated write-path smoke checks without broadcasting.
+
+### Changed
+
+- Dry-run execution now returns `status: "simulated"` with simulation details and skips journal mutation and transaction submission.
+- `--dry-run` is explicitly blocked with `--wait` / `--confirm`.
+
 ## 0.2.0 - 2026-02-27
 
 ### Added

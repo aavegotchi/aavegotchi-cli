@@ -1,6 +1,6 @@
 {
   "name": "aavegotchi-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Agent-first CLI for automating Aavegotchi app and onchain workflows",
   "license": "MIT",
   "repository": {
@@ -30,6 +30,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "parity:check": "node scripts/check-parity.mjs",
+    "smoke:write-dryrun": "bash scripts/smoke-write-dryrun.sh",
     "ag": "tsx src/index.ts",
     "prepack": "npm run build",
     "bootstrap:smoke": "AGCLI_HOME=/tmp/agcli-smoke tsx src/index.ts bootstrap --mode agent --profile smoke --chain base --signer readonly --json"

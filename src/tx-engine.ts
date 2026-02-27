@@ -98,10 +98,11 @@ async function waitForConfirmation(
 export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, customHome?: string): Promise<TxExecutionResult> {
     const idempotencyKey = resolveIdempotencyKey(intent);
     const journal = new JournalStore(resolveJournalPath(customHome));
+    const dryRun = Boolean(intent.dryRun);
 
     try {
         const preflight = await runRpcPreflight(chain, intent.rpcUrl);
-        const existing = journal.getByIdempotencyKey(idempotencyKey);
+        const existing = dryRun ? undefined : journal.getByIdempotencyKey(idempotencyKey);
 
         if (existing && existing.status === "confirmed") {
             return mapJournalToResult(existing);
@@ -123,7 +124,14 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
         const viemChain = toViemChain(chain, intent.rpcUrl);
         const signerRuntime = await resolveSignerRuntime(intent.signer, preflight.client, intent.rpcUrl, viemChain, customHome);
 
-        if (!signerRuntime.summary.canSign || !signerRuntime.sendTransaction || !signerRuntime.summary.address) {
+        if (!signerRuntime.summary.address) {
+            throw new CliError("MISSING_SIGNER_ADDRESS", "Signer address is required for simulation and transaction execution.", 2, {
+                signerType: signerRuntime.summary.signerType,
+                backendStatus: signerRuntime.summary.backendStatus,
+            });
+        }
+
+        if (!dryRun && (!signerRuntime.summary.canSign || !signerRuntime.sendTransaction)) {
             throw new CliError("READONLY_SIGNER", "Selected signer cannot submit transactions.", 2, {
                 signerType: signerRuntime.summary.signerType,
                 backendStatus: signerRuntime.summary.backendStatus,
@@ -161,7 +169,7 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
 
         const balanceWei = await preflight.client.getBalance({ address: fromAddress });
         const requiredWei = (intent.valueWei || 0n) + gasLimit * (maxFeePerGas || 0n);
-        if (balanceWei < requiredWei) {
+        if (!dryRun && balanceWei < requiredWei) {
             throw new CliError("INSUFFICIENT_FUNDS_PRECHECK", "Account balance is below estimated transaction requirement.", 2, {
                 from: fromAddress,
                 balanceWei: balanceWei.toString(),
@@ -186,6 +194,33 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
         };
 
         const nonce = await resolveNonce(intent, ctx, fromAddress);
+
+        if (dryRun) {
+            return {
+                idempotencyKey,
+                from: fromAddress,
+                to: toAddress,
+                nonce,
+                gasLimit: gasLimit.toString(),
+                maxFeePerGasWei: maxFeePerGas?.toString(),
+                maxPriorityFeePerGasWei: maxPriorityFeePerGas?.toString(),
+                status: "simulated",
+                dryRun: true,
+                simulation: {
+                    requiredWei: requiredWei.toString(),
+                    balanceWei: balanceWei.toString(),
+                    signerCanSign: signerRuntime.summary.canSign,
+                    noncePolicy: intent.noncePolicy,
+                },
+            };
+        }
+
+        if (!signerRuntime.sendTransaction) {
+            throw new CliError("READONLY_SIGNER", "Selected signer cannot submit transactions.", 2, {
+                signerType: signerRuntime.summary.signerType,
+                backendStatus: signerRuntime.summary.backendStatus,
+            });
+        }
 
         journal.upsertPrepared({
             idempotencyKey,
@@ -252,7 +287,9 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
         };
     } catch (error) {
         if (error instanceof CliError) {
-            journal.markFailed(idempotencyKey, error.code, error.message);
+            if (!dryRun) {
+                journal.markFailed(idempotencyKey, error.code, error.message);
+            }
             throw error;
         }
 
@@ -260,7 +297,9 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
             correlationId: randomUUID(),
             message: error instanceof Error ? error.message : String(error),
         });
-        journal.markFailed(idempotencyKey, unknown.code, unknown.message);
+        if (!dryRun) {
+            journal.markFailed(idempotencyKey, unknown.code, unknown.message);
+        }
         throw unknown;
     } finally {
         journal.close();

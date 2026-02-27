@@ -42,6 +42,90 @@ export interface CommandContext {
     globals: GlobalOptions;
 }
 
+export type SubgraphSourceAlias = "core-base" | "gbm-base";
+
+export interface SubgraphSourceDefinition {
+    alias: SubgraphSourceAlias;
+    endpoint: string;
+    description: string;
+}
+
+export interface SubgraphRequestOptions {
+    source: SubgraphSourceAlias;
+    queryName: string;
+    query: string;
+    variables?: Record<string, unknown>;
+    timeoutMs?: number;
+    authEnvVar?: string;
+    subgraphUrl?: string;
+    allowUntrustedSubgraph?: boolean;
+}
+
+export interface SubgraphResponseEnvelope<T> {
+    source: SubgraphSourceAlias;
+    endpoint: string;
+    queryName: string;
+    data: T;
+    raw?: JsonValue;
+}
+
+export interface BaazaarErc721ListingResult {
+    id: string;
+    category: string;
+    erc721TokenAddress: `0x${string}`;
+    tokenId: string;
+    seller: `0x${string}`;
+    priceInWei: string;
+    cancelled: boolean;
+    timeCreated: string;
+    timePurchased: string;
+}
+
+export interface BaazaarErc1155ListingResult {
+    id: string;
+    category: string;
+    erc1155TokenAddress: `0x${string}`;
+    erc1155TypeId: string;
+    quantity: string;
+    seller: `0x${string}`;
+    priceInWei: string;
+    cancelled: boolean;
+    sold: boolean;
+    timeCreated: string;
+}
+
+export interface GbmAuctionResult {
+    id: string;
+    type?: string;
+    contractAddress: `0x${string}`;
+    tokenId: string;
+    quantity: string;
+    seller: `0x${string}`;
+    highestBid: string;
+    highestBidder?: `0x${string}`;
+    totalBids: string;
+    startsAt: string;
+    endsAt: string;
+    claimAt?: string;
+    claimed: boolean;
+    cancelled: boolean;
+    presetId?: string;
+    category?: string;
+    buyNowPrice?: string;
+    startBidPrice?: string;
+}
+
+export interface GbmBidResult {
+    id: string;
+    bidder: `0x${string}`;
+    amount: string;
+    bidTime: string;
+    outbid: boolean;
+    previousBid?: string;
+    previousBidder?: `0x${string}`;
+    auctionId?: string;
+}
+
 export interface SignerReadonlyConfig {
     type: "readonly";
 }

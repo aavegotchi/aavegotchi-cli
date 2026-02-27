@@ -32,7 +32,7 @@ For read-only automation:
 npm run ag -- bootstrap --mode agent --profile prod --chain base --signer readonly --json
 ```
 
-## Command surface (current)
+## Command surface (v0.2.0)
 
 - `bootstrap`
 - `profile list|show|use|export`
@@ -43,6 +43,9 @@ npm run ag -- bootstrap --mode agent --profile prod --chain base --signer readon
 - `tx send|status|resume|watch`
 - `batch run --file plan.yaml`
 - `onchain call|send`
+- `subgraph list|check|query`
+- `baazaar listing get|active|mine` (subgraph-first read wrappers)
+- `auction get|active|mine|bids|bids-mine` (subgraph-first read wrappers)
 - `<domain> read` (routes to generic onchain call for that domain)
 
 Planned domain namespaces are stubbed for parity tracking:
@@ -51,6 +54,71 @@ Planned domain namespaces are stubbed for parity tracking:
 
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
 Example: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
+
+## Subgraph sources and endpoint policy
+
+Canonical source aliases:
+
+- `core-base` -> `https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn`
+- `gbm-base` -> `https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-gbm-baazaar-base/prod/gn`
+
+Default policy is strict allowlist:
+
+- Non-canonical subgraph URLs are blocked by default (`SUBGRAPH_ENDPOINT_BLOCKED`)
+- Override is explicit and per-command only: pass both `--subgraph-url <https-url>` and `--allow-untrusted-subgraph`
+- Non-HTTPS custom URLs are rejected
+
+Auth:
+
+- Public Goldsky endpoints work without auth
+- If `GOLDSKY_API_KEY` is set, CLI injects `Authorization: Bearer <token>`
+- Override env var name per command with `--auth-env-var <ENV>`
+
+## Subgraph command examples
+
+List configured canonical sources:
+
+```bash
+npm run ag -- subgraph list --json
+```
+
+Check source reachability/introspection:
+
+```bash
+npm run ag -- subgraph check --source core-base --json
+```
+
+Run custom GraphQL query:
+
+```bash
+npm run ag -- subgraph query \
+  --source gbm-base \
+  --query 'query($first:Int!){ auctions(first:$first){ id } }' \
+  --variables-json '{"first":5}' \
+  --json
+```
+
+Baazaar wrappers:
+
+```bash
+npm run ag -- baazaar listing active --kind erc721 --first 20 --skip 0 --json
+npm run ag -- baazaar listing mine --kind erc1155 --seller 0x... --json
+npm run ag -- baazaar listing get --kind erc721 --id 123 --verify-onchain --json
+```
+
+GBM wrappers:
+
+```bash
+npm run ag -- auction active --first 20 --json
+npm run ag -- auction bids --auction-id 123 --json
+npm run ag -- auction get --id 123 --verify-onchain --json
+```
+
+Raw GraphQL passthrough (typed projection remains included):
+
+```bash
+npm run ag -- auction active --first 5 --raw --json
+```
 
 ## Signer backends
 
@@ -106,6 +174,8 @@ All successful/error responses use a stable envelope:
 
 - Method inventory: [`docs/parity/base-method-inventory.md`](docs/parity/base-method-inventory.md)
 - Command mapping: [`docs/parity/base-command-matrix.md`](docs/parity/base-command-matrix.md)
+- Subgraph endpoints/policy: [`docs/subgraph/endpoints-and-policy.md`](docs/subgraph/endpoints-and-policy.md)
+- Subgraph query matrix: [`docs/subgraph/query-matrix.md`](docs/subgraph/query-matrix.md)
 
 Raffle/ticket flows are intentionally excluded for Base-era scope.
 

@@ -4,6 +4,8 @@ import { runBatchRunCommand } from "./commands/batch";
 import { runBootstrapCommand } from "./commands/bootstrap";
 import { findMappedFunction, runMappedDomainCommand } from "./commands/mapped";
 import { runOnchainCallCommand, runOnchainSendCommand } from "./commands/onchain";
+import { runAuctionSubgraphCommand } from "./commands/auction-subgraph";
+import { runBaazaarListingSubgraphCommand } from "./commands/baazaar-subgraph";
 import {
     runPolicyListCommand,
     runPolicyShowCommand,
@@ -23,6 +25,7 @@ import {
     runSignerKeychainRemoveCommand,
 } from "./commands/signer";
 import { isDomainStubRoot, runDomainStubCommand } from "./commands/stubs";
+import { runSubgraphCheckCommand, runSubgraphListCommand, runSubgraphQueryCommand } from "./commands/subgraph";
 import { runTxResumeCommand, runTxSendCommand, runTxStatusCommand, runTxWatchCommand } from "./commands/tx";
 
 export interface CommandExecutionResult {
@@ -192,6 +195,48 @@ export async function executeCommand(ctx: CommandContext): Promise<CommandExecut
             return {
                 commandName: "onchain send",
                 data: await runOnchainSendCommand(ctx),
+            };
+        }
+    }
+
+    if (root === "subgraph") {
+        if (!sub || sub === "list") {
+            return {
+                commandName: "subgraph list",
+                data: await runSubgraphListCommand(),
+            };
+        }
+
+        if (sub === "check") {
+            return {
+                commandName: "subgraph check",
+                data: await runSubgraphCheckCommand(ctx),
+            };
+        }
+
+        if (sub === "query") {
+            return {
+                commandName: "subgraph query",
+                data: await runSubgraphQueryCommand(ctx),
+            };
+        }
+    }
+
+    if (root === "baazaar" && sub === "listing") {
+        const action = ctx.commandPath[2];
+        if (action === "get" || action === "active" || action === "mine") {
+            return {
+                commandName: ctx.commandPath.join(" "),
+                data: await runBaazaarListingSubgraphCommand(ctx),
+            };
+        }
+    }
+
+    if (root === "auction") {
+        if (sub === "get" || sub === "active" || sub === "mine" || sub === "bids" || sub === "bids-mine") {
+            return {
+                commandName: ctx.commandPath.join(" "),
+                data: await runAuctionSubgraphCommand(ctx),
             };
         }
     }

@@ -91,10 +91,16 @@ Automation commands:
 Power-user commands:
   onchain call                       Call any ABI function from --abi-file
   onchain send                       Send any ABI function as a transaction
+  subgraph list|check|query          List/check/query canonical Goldsky subgraphs
 
 Domain namespaces:
-  gotchi, portal, wearables, items, inventory, baazaar, lending, realm, alchemica, forge, token
+  gotchi, portal, wearables, items, inventory, baazaar, auction, lending, staking, gotchi-points, realm, alchemica, forge, token
   (many write flows are mapped to onchain send aliases; unmatched commands return typed not-implemented)
+
+Subgraph wrappers:
+  baazaar listing get|active|mine    Read Baazaar listing data from core-base subgraph
+  auction get|active|mine|bids|bids-mine
+                                     Read GBM auction/bid data from gbm-base subgraph
 
 Global flags:
   --mode <agent|human>               Agent mode implies --json --yes
@@ -117,6 +123,9 @@ Examples:
   ag bootstrap --mode agent --profile prod --chain base --signer env:AGCLI_PRIVATE_KEY --json
   AGCLI_KEYCHAIN_PASSPHRASE=... AGCLI_PRIVATE_KEY=0x... ag signer keychain import --account-id bot --private-key-env AGCLI_PRIVATE_KEY --json
   ag tx send --profile prod --to 0xabc... --value-wei 1000000000000000 --wait --json
+  ag subgraph check --source core-base --json
+  ag baazaar listing active --kind erc721 --first 20 --json
+  ag auction active --first 20 --json
   ag lending create --profile prod --abi-file ./abis/GotchiLendingFacet.json --address 0xabc... --args-json '[...]' --json
   ag batch run --file ./plan.yaml --json
 `);

@@ -86,3 +86,66 @@ export const batchPlanSchema = z.object({
 });
 
 export type BatchPlan = z.infer<typeof batchPlanSchema>;
+
+export const subgraphVariablesSchema = z.object({}).catchall(z.unknown());
+
+export const baazaarErc721ListingSchema = z.object({
+    id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    category: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    erc721TokenAddress: addressSchema,
+    tokenId: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    seller: addressSchema,
+    priceInWei: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    cancelled: z.boolean(),
+    timeCreated: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    timePurchased: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+});
+
+export const baazaarErc1155ListingSchema = z.object({
+    id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    category: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    erc1155TokenAddress: addressSchema,
+    erc1155TypeId: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    quantity: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    seller: addressSchema,
+    priceInWei: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    cancelled: z.boolean(),
+    sold: z.boolean(),
+    timeCreated: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+});
+
+export const gbmAuctionSchema = z.object({
+    id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    type: z.string().optional(),
+    contractAddress: addressSchema,
+    tokenId: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    quantity: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    seller: addressSchema,
+    highestBid: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    highestBidder: addressSchema.optional(),
+    totalBids: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    startsAt: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    endsAt: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    claimAt: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)).optional(),
+    claimed: z.boolean(),
+    cancelled: z.boolean(),
+    presetId: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)).optional(),
+    category: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)).optional(),
+    buyNowPrice: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)).optional(),
+    startBidPrice: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)).optional(),
+});
+
+export const gbmBidSchema = z.object({
+    id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+    bidder: addressSchema,
+    amount: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    bidTime: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)),
+    outbid: z.boolean(),
+    previousBid: z.union([z.string(), z.number(), z.bigint()]).transform((value) => String(value)).optional(),
+    previousBidder: addressSchema.optional(),
+    auction: z
+        .object({
+            id: z.union([z.string(), z.number()]).transform((value) => String(value)),
+        })
+        .optional(),
+});

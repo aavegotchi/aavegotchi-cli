@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.3 - 2026-02-27
+
 ### Fixed
 
 - Bankr signer now sends the minimal `/agent/submit` transaction schema and omits gas/nonce/fee fields for compatibility.

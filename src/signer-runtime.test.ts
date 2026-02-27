@@ -154,6 +154,12 @@ describe("signer runtime", () => {
             const body = JSON.parse(String(init?.body));
             expect(body.waitForConfirmation).toBe(false);
             expect(body.transaction.to).toBe("0x0000000000000000000000000000000000000001");
+            expect(body.transaction.gas).toBeUndefined();
+            expect(body.transaction.nonce).toBeUndefined();
+            expect(body.transaction.maxFeePerGas).toBeUndefined();
+            expect(body.transaction.maxPriorityFeePerGas).toBeUndefined();
+            expect(body.transaction.from).toBeUndefined();
+            expect(body.description).toBeUndefined();
             return {
                 ok: true,
                 text: async () => JSON.stringify({ transactionHash: "0x" + "e".repeat(64) }),
@@ -187,6 +193,13 @@ describe("signer runtime", () => {
         const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
             expect(url).toBe("https://api.bankr.bot/agent/submit");
             expect((init?.headers as Record<string, string>)["x-api-key"]).toBe("bankr-token");
+            const body = JSON.parse(String(init?.body));
+            expect(body.transaction.chainId).toBe(base.id);
+            expect(body.transaction.gas).toBeUndefined();
+            expect(body.transaction.nonce).toBeUndefined();
+            expect(body.transaction.maxFeePerGas).toBeUndefined();
+            expect(body.transaction.maxPriorityFeePerGas).toBeUndefined();
+            expect(body.transaction.from).toBeUndefined();
             return {
                 ok: true,
                 text: async () => JSON.stringify({ txHash: "0x" + "f".repeat(64) }),

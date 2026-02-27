@@ -621,20 +621,15 @@ export async function resolveSignerRuntime(
         return {
             summary,
             sendTransaction: async (request) => {
+                // Bankr expects a minimal transaction schema for /agent/submit.
                 const payload = {
                     transaction: {
                         chainId: request.chain.id,
-                        from: address,
                         to: request.to,
                         data: request.data,
                         value: request.value?.toString() || "0",
-                        gas: request.gas.toString(),
-                        nonce: request.nonce,
-                        maxFeePerGas: request.maxFeePerGas?.toString(),
-                        maxPriorityFeePerGas: request.maxPriorityFeePerGas?.toString(),
                     },
                     waitForConfirmation: false,
-                    description: "Submitted via aavegotchi-cli",
                 };
 
                 const response = await fetchBankrJson(addDefaultPaths(apiUrl, BANKR_AGENT_SUBMIT_PATH), {

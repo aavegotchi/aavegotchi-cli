@@ -74,6 +74,8 @@ Usage:
 Core commands:
   bootstrap                         Create/update and activate a profile with RPC/signer preflight
   profile list|show|use|export      Manage profiles
+  signer check                      Verify active profile signer backend and account readiness
+  signer keychain list|import|remove
   policy list|show|upsert           Manage transaction policies
   rpc check                          Verify RPC connectivity + signer backend health
 
@@ -104,12 +106,16 @@ Bootstrap flags:
   --profile NAME                     Profile to create or update (required)
   --chain base|base-sepolia|<id>     Chain key or numeric chain id (default: base)
   --rpc-url URL                      RPC endpoint (optional when chain preset exists)
-  --signer readonly|env:VAR|keychain:<id>|ledger[:path]|remote:<url>
+  --signer readonly|env:VAR|keychain:<id>|ledger[:path|address|bridgeEnv]|remote:<url|address|authEnv>
+  --signer-address 0x...             Optional override for remote/ledger signer address
+  --signer-auth-env-var ENV_VAR      Optional remote signer bearer token env var
+  --signer-bridge-env-var ENV_VAR    Optional ledger bridge command env var name
   --policy NAME                      Policy label (default: default)
   --skip-signer-check                Persist signer config without backend validation
 
 Examples:
   ag bootstrap --mode agent --profile prod --chain base --signer env:AGCLI_PRIVATE_KEY --json
+  AGCLI_KEYCHAIN_PASSPHRASE=... AGCLI_PRIVATE_KEY=0x... ag signer keychain import --account-id bot --private-key-env AGCLI_PRIVATE_KEY --json
   ag tx send --profile prod --to 0xabc... --value-wei 1000000000000000 --wait --json
   ag lending create --profile prod --abi-file ./abis/GotchiLendingFacet.json --address 0xabc... --args-json '[...]' --json
   ag batch run --file ./plan.yaml --json

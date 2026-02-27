@@ -16,6 +16,12 @@ import {
     runProfileUseCommand,
 } from "./commands/profile";
 import { runRpcCheckCommand } from "./commands/rpc";
+import {
+    runSignerCheckCommand,
+    runSignerKeychainImportCommand,
+    runSignerKeychainListCommand,
+    runSignerKeychainRemoveCommand,
+} from "./commands/signer";
 import { isDomainStubRoot, runDomainStubCommand } from "./commands/stubs";
 import { runTxResumeCommand, runTxSendCommand, runTxStatusCommand, runTxWatchCommand } from "./commands/tx";
 
@@ -111,6 +117,39 @@ export async function executeCommand(ctx: CommandContext): Promise<CommandExecut
         }
     }
 
+    if (root === "signer") {
+        if (!sub || sub === "check") {
+            return {
+                commandName: "signer check",
+                data: await runSignerCheckCommand(ctx),
+            };
+        }
+
+        if (sub === "keychain") {
+            const action = ctx.commandPath[2];
+            if (!action || action === "list") {
+                return {
+                    commandName: "signer keychain list",
+                    data: await runSignerKeychainListCommand(),
+                };
+            }
+
+            if (action === "import") {
+                return {
+                    commandName: "signer keychain import",
+                    data: await runSignerKeychainImportCommand(ctx),
+                };
+            }
+
+            if (action === "remove") {
+                return {
+                    commandName: "signer keychain remove",
+                    data: await runSignerKeychainRemoveCommand(ctx),
+                };
+            }
+        }
+    }
+
     if (root === "tx") {
         if (!sub || sub === "status") {
             return {
@@ -164,10 +203,17 @@ export async function executeCommand(ctx: CommandContext): Promise<CommandExecut
         };
     }
 
-    if (isDomainStubRoot(root) && findMappedFunction(ctx.commandPath)) {
+    if (findMappedFunction(ctx.commandPath)) {
         return {
             commandName: ctx.commandPath.join(" "),
             data: await runMappedDomainCommand(ctx),
+        };
+    }
+
+    if (isDomainStubRoot(root) && sub === "read") {
+        return {
+            commandName: ctx.commandPath.join(" "),
+            data: await runOnchainCallCommand(ctx),
         };
     }
 

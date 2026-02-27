@@ -8,6 +8,7 @@ import { CliConfig, PolicyConfig, ProfileConfig } from "./types";
 
 const CONFIG_FILE = "config.json";
 const JOURNAL_FILE = "journal.sqlite";
+const KEYCHAIN_FILE = "keychain.json";
 
 function nowIso(): string {
     return new Date().toISOString();
@@ -58,6 +59,11 @@ export function resolveConfigPath(customHome?: string): string {
 export function resolveJournalPath(customHome?: string): string {
     const home = resolveAgcliHome(customHome);
     return path.join(home, JOURNAL_FILE);
+}
+
+export function resolveKeychainPath(customHome?: string): string {
+    const home = resolveAgcliHome(customHome);
+    return path.join(home, KEYCHAIN_FILE);
 }
 
 function migrateLegacyConfig(raw: unknown): CliConfig {

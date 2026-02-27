@@ -59,6 +59,8 @@ export interface SignerKeychainConfig {
 export interface SignerLedgerConfig {
     type: "ledger";
     derivationPath?: string;
+    address?: `0x${string}`;
+    bridgeCommandEnvVar?: string;
 }
 
 export interface SignerRemoteConfig {

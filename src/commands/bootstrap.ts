@@ -25,6 +25,34 @@ function getRequiredProfileName(ctx: CommandContext): string {
     return profile;
 }
 
+function buildSignerConfig(ctx: CommandContext, signerInput: string): ProfileConfig["signer"] {
+    const signer = parseSigner(signerInput);
+
+    if (signer.type === "remote") {
+        const address = getFlagString(ctx.args.flags, "signer-address");
+        const authEnvVar = getFlagString(ctx.args.flags, "signer-auth-env-var");
+
+        return {
+            ...signer,
+            ...(address ? { address: address as `0x${string}` } : {}),
+            ...(authEnvVar ? { authEnvVar } : {}),
+        };
+    }
+
+    if (signer.type === "ledger") {
+        const address = getFlagString(ctx.args.flags, "signer-address");
+        const bridgeCommandEnvVar = getFlagString(ctx.args.flags, "signer-bridge-env-var");
+
+        return {
+            ...signer,
+            ...(address ? { address: address as `0x${string}` } : {}),
+            ...(bridgeCommandEnvVar ? { bridgeCommandEnvVar } : {}),
+        };
+    }
+
+    return signer;
+}
+
 export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValue> {
     const profileName = getRequiredProfileName(ctx);
     const chainInput = getFlagString(ctx.args.flags, "chain");
@@ -37,7 +65,7 @@ export async function runBootstrapCommand(ctx: CommandContext): Promise<JsonValu
     const rpcUrl = resolveRpcUrl(chain, rpcFlag);
 
     const preflight = await runRpcPreflight(chain, rpcUrl);
-    const signer = parseSigner(signerInput);
+    const signer = buildSignerConfig(ctx, signerInput);
 
     let signerSummary: JsonValue = {
         signerType: signer.type,

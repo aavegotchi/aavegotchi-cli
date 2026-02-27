@@ -121,13 +121,16 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
         }
 
         const viemChain = toViemChain(chain, intent.rpcUrl);
-        const signerRuntime = await resolveSignerRuntime(intent.signer, preflight.client, intent.rpcUrl, viemChain);
+        const signerRuntime = await resolveSignerRuntime(intent.signer, preflight.client, intent.rpcUrl, viemChain, customHome);
 
-        if (!signerRuntime.account || !signerRuntime.walletClient) {
-            throw new CliError("READONLY_SIGNER", "Selected signer cannot submit transactions.", 2);
+        if (!signerRuntime.summary.canSign || !signerRuntime.sendTransaction || !signerRuntime.summary.address) {
+            throw new CliError("READONLY_SIGNER", "Selected signer cannot submit transactions.", 2, {
+                signerType: signerRuntime.summary.signerType,
+                backendStatus: signerRuntime.summary.backendStatus,
+            });
         }
 
-        const fromAddress = signerRuntime.account.address;
+        const fromAddress = signerRuntime.summary.address;
         const toAddress = intent.to;
         const dataHex = toHexData(intent.data);
 
@@ -155,6 +158,16 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
         const feeEstimate = await preflight.client.estimateFeesPerGas();
         const maxFeePerGas = feeEstimate.maxFeePerGas;
         const maxPriorityFeePerGas = feeEstimate.maxPriorityFeePerGas;
+
+        const balanceWei = await preflight.client.getBalance({ address: fromAddress });
+        const requiredWei = (intent.valueWei || 0n) + gasLimit * (maxFeePerGas || 0n);
+        if (balanceWei < requiredWei) {
+            throw new CliError("INSUFFICIENT_FUNDS_PRECHECK", "Account balance is below estimated transaction requirement.", 2, {
+                from: fromAddress,
+                balanceWei: balanceWei.toString(),
+                requiredWei: requiredWei.toString(),
+            });
+        }
 
         enforcePolicy({
             policy: intent.policy,
@@ -190,9 +203,8 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
             status: "prepared",
         });
 
-        const txHash = await signerRuntime.walletClient.sendTransaction({
-            account: signerRuntime.account,
-            chain: signerRuntime.walletClient.chain,
+        const txHash = await signerRuntime.sendTransaction({
+            chain: viemChain,
             to: toAddress,
             data: dataHex,
             value: intent.valueWei,

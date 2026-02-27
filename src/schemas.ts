@@ -9,7 +9,12 @@ export const signerSchema = z.discriminatedUnion("type", [
     z.object({ type: z.literal("readonly") }),
     z.object({ type: z.literal("env"), envVar: z.string().regex(/^[A-Z_][A-Z0-9_]*$/) }),
     z.object({ type: z.literal("keychain"), accountId: z.string().min(1) }),
-    z.object({ type: z.literal("ledger"), derivationPath: z.string().optional() }),
+    z.object({
+        type: z.literal("ledger"),
+        derivationPath: z.string().optional(),
+        address: addressSchema.optional(),
+        bridgeCommandEnvVar: z.string().regex(/^[A-Z_][A-Z0-9_]*$/).optional(),
+    }),
     z.object({
         type: z.literal("remote"),
         url: z.string().url(),

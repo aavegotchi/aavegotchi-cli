@@ -53,6 +53,7 @@ Planned domain namespaces are stubbed for parity tracking:
 - `gotchi`, `portal`, `wearables`, `items`, `inventory`, `baazaar`, `auction`, `lending`, `staking`, `gotchi-points`, `realm`, `alchemica`, `forge`, `token`
 
 Many Base-era write flows are already executable as mapped aliases in those namespaces (internally routed through `onchain send`).
+Mapped writes now include built-in ABI defaults, so `--abi-file` is no longer required for mapped command execution/help.
 Example with built-in defaults: `ag auction bid --args-json '[...]' --dry-run --json`
 Example with explicit metadata: `ag lending create --abi-file ./abis/GotchiLendingFacet.json --address 0x... --args-json '[...]' --json`
 

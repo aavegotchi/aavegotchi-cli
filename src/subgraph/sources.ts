@@ -8,6 +8,9 @@ export const GBM_BASE_ENDPOINT =
 
 export const BASE_AAVEGOTCHI_DIAMOND = "0xa99c4b08201f2913db8d28e71d020c4298f29dbf" as const;
 export const BASE_GBM_DIAMOND = "0x80320a0000c7a6a34086e2acad6915ff57ffda31" as const;
+export const BASE_FORGE_DIAMOND = "0x50af2d63b839aa32b4166fd1cb247129b715186c" as const;
+export const BASE_GLTR_STAKING = "0xab449dca14413a6ae0bcea9ea210b57ace280d2c" as const;
+export const BASE_MERKLE_DISTRIBUTOR = "0xf50326e1a6c6949cc390c4efe8ea538e29a4fa11" as const;
 
 const SOURCE_MAP: Record<SubgraphSourceAlias, SubgraphSourceDefinition> = {
     "core-base": {

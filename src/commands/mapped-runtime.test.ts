@@ -62,20 +62,24 @@ describe("mapped command execution defaults", () => {
         });
     });
 
-    it("keeps non-defaulted mapped commands requiring explicit metadata", async () => {
+    it("allows ABI-only defaults for commands that still need explicit address", async () => {
         runOnchainSendWithFunctionMock.mockResolvedValue({ ok: true });
 
-        const result = await runMappedDomainCommand(createCtx(["baazaar", "buy-now"]));
+        const result = await runMappedDomainCommand(createCtx(["token", "approve"]));
         const call = runOnchainSendWithFunctionMock.mock.calls[0];
         const defaultsArg = call?.[3] as { abi?: unknown; address?: unknown; source?: unknown };
 
         expect(runOnchainSendWithFunctionMock).toHaveBeenCalledTimes(1);
-        expect(defaultsArg.abi).toBeUndefined();
+        expect(defaultsArg.abi).toBeDefined();
         expect(defaultsArg.address).toBeUndefined();
-        expect(defaultsArg.source).toBeUndefined();
+        expect(defaultsArg.source).toBe("canonical.erc20");
         expect(result).toMatchObject({
-            mappedMethod: "buyNow",
-            defaults: null,
+            mappedMethod: "approve",
+            defaults: {
+                source: "canonical.erc20",
+                address: null,
+                abi: "available",
+            },
             result: { ok: true },
         });
     });

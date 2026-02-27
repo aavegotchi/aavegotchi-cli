@@ -1,6 +1,6 @@
 {
   "name": "aavegotchi-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent-first CLI for automating Aavegotchi app and onchain workflows",
   "license": "MIT",
   "repository": {
@@ -11,7 +11,8 @@
   "main": "dist/index.js",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "bin": {
     "ag": "dist/index.js",

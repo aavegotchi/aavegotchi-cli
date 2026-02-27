@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.2.6 - 2026-02-27
+
+### Changed
+
+- Removed the deprecated `gotchi-points` command family from the live CLI surface.
+- Removed mapped command `gotchi-points convert-alchemica` and related mapped defaults.
+- Updated command/help/docs parity artifacts to match current live functionality.
+
 ## 0.2.5 - 2026-02-27
 
 ### Added

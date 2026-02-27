@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "parity:check": "node scripts/check-parity.mjs",
     "ag": "tsx src/index.ts",
     "bootstrap:smoke": "AGCLI_HOME=/tmp/agcli-smoke tsx src/index.ts bootstrap --mode agent --profile smoke --chain base --signer readonly --json"
   },

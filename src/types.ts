@@ -186,6 +186,7 @@ export interface ProfileConfig {
     chainId: number;
     rpcUrl: string;
     signer: SignerConfig;
+    envFile?: string;
     policy: string;
     createdAt: string;
     updatedAt: string;

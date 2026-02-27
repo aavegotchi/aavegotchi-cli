@@ -52,6 +52,70 @@ function mapJournalToResult(entry: JournalEntry): TxExecutionResult {
     };
 }
 
+function extractErrorMessage(error: unknown): string {
+    if (typeof error === "string") {
+        return error;
+    }
+
+    if (error instanceof Error) {
+        const typed = error as Error & { shortMessage?: string; details?: string; cause?: unknown };
+        return typed.shortMessage || typed.details || typed.message;
+    }
+
+    if (typeof error === "object" && error !== null) {
+        const maybe = error as { shortMessage?: unknown; message?: unknown; details?: unknown };
+        if (typeof maybe.shortMessage === "string") {
+            return maybe.shortMessage;
+        }
+
+        if (typeof maybe.message === "string") {
+            return maybe.message;
+        }
+
+        if (typeof maybe.details === "string") {
+            return maybe.details;
+        }
+    }
+
+    return String(error);
+}
+
+function classifySimulationRevert(message: string): { reasonCode: string; reason: string } {
+    const normalized = message.toLowerCase();
+
+    if (normalized.includes("allowance")) {
+        return {
+            reasonCode: "INSUFFICIENT_ALLOWANCE",
+            reason: "Allowance is below required token spend.",
+        };
+    }
+
+    if ((normalized.includes("bid") && normalized.includes("low")) || normalized.includes("start bid")) {
+        return {
+            reasonCode: "BID_BELOW_START",
+            reason: "Bid amount is below minimum threshold.",
+        };
+    }
+
+    if (
+        normalized.includes("auction") &&
+        (normalized.includes("ended") ||
+            normalized.includes("state") ||
+            normalized.includes("not active") ||
+            normalized.includes("already"))
+    ) {
+        return {
+            reasonCode: "AUCTION_STATE_CHANGED",
+            reason: "Auction state changed before execution.",
+        };
+    }
+
+    return {
+        reasonCode: "UNKNOWN_REVERT",
+        reason: "Revert reason could not be classified.",
+    };
+}
+
 async function resolveNonce(intent: TxIntent, ctx: ExecutionContext, address: `0x${string}`): Promise<number> {
     if (intent.noncePolicy === "manual") {
         if (intent.nonce === undefined) {
@@ -151,8 +215,12 @@ export async function executeTxIntent(intent: TxIntent, chain: ResolvedChain, cu
                 value: intent.valueWei,
             });
         } catch (error) {
+            const message = extractErrorMessage(error);
+            const classified = classifySimulationRevert(message);
             throw new CliError("SIMULATION_REVERT", "Transaction simulation reverted.", 2, {
-                message: error instanceof Error ? error.message : String(error),
+                message,
+                reasonCode: classified.reasonCode,
+                reason: classified.reason,
             });
         }
 

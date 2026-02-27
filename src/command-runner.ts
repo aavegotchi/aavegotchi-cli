@@ -5,6 +5,7 @@ import { runBatchRunCommand } from "./commands/batch";
 import { runBootstrapCommand } from "./commands/bootstrap";
 import { findMappedFunction, runMappedDomainCommand } from "./commands/mapped";
 import { runOnchainCallCommand, runOnchainSendCommand } from "./commands/onchain";
+import { runAuctionBidCommand, runAuctionBidUnbidCommand } from "./commands/auction-bid";
 import { runAuctionSubgraphCommand } from "./commands/auction-subgraph";
 import { runBaazaarListingSubgraphCommand } from "./commands/baazaar-subgraph";
 import {
@@ -238,6 +239,20 @@ export async function executeCommand(ctx: CommandContext): Promise<CommandExecut
     }
 
     if (root === "auction") {
+        if (sub === "bid") {
+            return {
+                commandName: "auction bid",
+                data: await runAuctionBidCommand(ctx),
+            };
+        }
+
+        if (sub === "bid-unbid") {
+            return {
+                commandName: "auction bid-unbid",
+                data: await runAuctionBidUnbidCommand(ctx),
+            };
+        }
+
         if (sub === "get" || sub === "active" || sub === "mine" || sub === "bids" || sub === "bids-mine") {
             return {
                 commandName: ctx.commandPath.join(" "),

@@ -2,6 +2,7 @@ import { getFlagBoolean, getFlagString } from "../args";
 import { resolveChain, resolveRpcUrl } from "../chains";
 import { getPolicyOrThrow, getProfileOrThrow, loadConfig } from "../config";
 import { CliError } from "../errors";
+import { applyProfileEnvironment } from "../profile-env";
 import {
     executeTxIntent,
     getJournalEntryByHash,
@@ -81,6 +82,7 @@ export async function runTxSendCommand(ctx: CommandContext): Promise<JsonValue> 
     const requestedProfile = getFlagString(ctx.args.flags, "profile") || ctx.globals.profile;
     const profile = getProfileOrThrow(config, requestedProfile);
     const policy = getPolicyOrThrow(config, profile.policy);
+    const environment = applyProfileEnvironment(profile);
 
     const chain = resolveChain(profile.chain);
     const rpcUrl = resolveRpcUrl(chain, getFlagString(ctx.args.flags, "rpc-url") || profile.rpcUrl);
@@ -128,6 +130,7 @@ export async function runTxSendCommand(ctx: CommandContext): Promise<JsonValue> 
         profile: profile.name,
         policy: policy.name,
         chainId: chain.chainId,
+        environment,
         ...result,
     };
 }

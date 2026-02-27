@@ -5,6 +5,7 @@ import { parseAbiFile } from "../abi";
 import { resolveChain, resolveRpcUrl } from "../chains";
 import { getPolicyOrThrow, getProfileOrThrow, loadConfig } from "../config";
 import { CliError } from "../errors";
+import { applyProfileEnvironment } from "../profile-env";
 import { runRpcPreflight } from "../rpc";
 import { executeTxIntent } from "../tx-engine";
 import { CommandContext, JsonValue, TxIntent } from "../types";
@@ -137,6 +138,7 @@ export async function runOnchainSendWithFunction(
     const profileName = getFlagString(ctx.args.flags, "profile") || ctx.globals.profile;
     const profile = getProfileOrThrow(config, profileName);
     const policy = getPolicyOrThrow(config, profile.policy);
+    const environment = applyProfileEnvironment(profile);
 
     const chain = resolveChain(profile.chain);
     const rpcUrl = resolveRpcUrl(chain, getFlagString(ctx.args.flags, "rpc-url") || profile.rpcUrl);
@@ -228,6 +230,7 @@ export async function runOnchainSendWithFunction(
             address: addressInput ? "flag" : defaults?.address ? "mapped-default" : "none",
             source: defaults?.source || null,
         },
+        environment,
         result,
     };
 }

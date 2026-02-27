@@ -73,6 +73,7 @@ Power-user commands:
 Subgraph wrappers:
   baazaar listing get|active|mine
   auction get|active|mine|bids|bids-mine
+  auction bid|bid-unbid
 
 Domain namespaces:
   gotchi, portal, wearables, items, inventory, baazaar, auction, lending, staking, gotchi-points, realm, alchemica, forge, token
@@ -98,7 +99,7 @@ Examples:
 const STATIC_HELP: Record<string, string> = {
     bootstrap: `
 Usage:
-  ag bootstrap --profile <name> [--chain <base|base-sepolia|id>] [--rpc-url <url>] [--signer <config>] [--policy <name>] [--skip-signer-check] [--json]
+  ag bootstrap --profile <name> [--chain <base|base-sepolia|id>] [--rpc-url <url>] [--signer <config>] [--env-file <path>] [--policy <name>] [--skip-signer-check] [--json]
 
 Required:
   --profile <name>
@@ -295,6 +296,8 @@ Usage:
   ag auction mine --seller <0x...> [--first <n>] [--skip <n>] [--at-time <unixSec>] [--json]
   ag auction bids --auction-id <auctionId> [--first <n>] [--skip <n>] [--json]
   ag auction bids-mine --bidder <0x...> [--first <n>] [--skip <n>] [--json]
+  ag auction bid --auction-id <auctionId> --amount-ghst <amount> [--dry-run] [--auto-approve] [--json]
+  ag auction bid-unbid --amount-ghst <amount> --max-total-ghst <amount> [--dry-run] [--auto-approve] [--json]
   ag auction <mapped-write> --help
 `,
     "auction get": `
@@ -316,6 +319,24 @@ Usage:
     "auction bids-mine": `
 Usage:
   ag auction bids-mine --bidder <0x...> [--first <n>] [--skip <n>] [--json]
+`,
+    "auction bid": `
+Usage:
+  ag auction bid --auction-id <auctionId> (--amount-ghst <amount> | --amount-wei <wei>) [--require-unbid] [--expected-highest-bid-ghst <amount> | --expected-highest-bid-wei <wei>] [--auto-approve] [--auto-approve-max-ghst <amount> | --auto-approve-max-wei <wei>] [--nonce-policy <safe|replace|manual>] [--nonce <n>] [--dry-run] [--wait] [--timeout-ms <ms>] [--idempotency-key <key>] [--json]
+
+Notes:
+  - Resolves GBM diamond + ABI internally (no manual ABI/address flags).
+  - Runs preflight checks (auction state, min bid, GHST balance, GHST allowance).
+  - Rechecks auction state immediately before submit to prevent stale-state sends.
+  - --dry-run with --auto-approve simulates approval and skips bid simulation because allowance state is unchanged on-chain.
+`,
+    "auction bid-unbid": `
+Usage:
+  ag auction bid-unbid (--amount-ghst <amount> | --amount-wei <wei>) (--max-total-ghst <amount> | --max-total-wei <wei>) [--first <n>] [--skip <n>] [--auto-approve] [--dry-run] [--wait] [--timeout-ms <ms>] [--idempotency-key <key>] [--json]
+
+Behavior:
+  - Scans active auctions, selects unbid auctions, and skips those above your target amount.
+  - Emits per-auction status plus clear skip reasons in one JSON report.
 `,
 };
 
@@ -473,14 +494,14 @@ export function buildHelpText(commandPath: string[] = [], flags: Flags = {}): st
         return buildGlobalHelpText().trim();
     }
 
-    const mappedHelp = buildMappedCommandHelp(target, flags);
-    if (mappedHelp) {
-        return mappedHelp.trim();
-    }
-
     const key = target.join(" ");
     if (STATIC_HELP[key]) {
         return STATIC_HELP[key].trim();
+    }
+
+    const mappedHelp = buildMappedCommandHelp(target, flags);
+    if (mappedHelp) {
+        return mappedHelp.trim();
     }
 
     if (target.length === 1 && isDomainStubRoot(target[0])) {

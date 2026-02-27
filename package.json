@@ -1,6 +1,6 @@
 {
   "name": "aavegotchi-cli",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Agent-first CLI for automating Aavegotchi app and onchain workflows",
   "license": "MIT",
   "repository": {

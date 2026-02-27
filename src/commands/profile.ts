@@ -18,6 +18,7 @@ export async function runProfileListCommand(): Promise<JsonValue> {
             rpcUrl: profile.rpcUrl,
             policy: profile.policy,
             signerType: profile.signer.type,
+            envFile: profile.envFile || null,
             active: config.activeProfile === profile.name,
             updatedAt: profile.updatedAt,
         }));

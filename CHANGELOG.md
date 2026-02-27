@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- Built-in ABI defaults for all mapped write commands, removing the need to manually look up ABI signatures for mapped execution and `--help`.
+
+### Changed
+
+- Expanded mapped metadata coverage beyond auctions:
+  - canonical Base addresses now auto-resolve for high-confidence command families (Aavegotchi diamond, GBM diamond, Forge diamond, GLTR staking, Merkle distributor).
+  - command families with dynamic target contracts still auto-resolve ABI and only require `--address`.
+
 ## 0.2.4 - 2026-02-27
 
 ### Added

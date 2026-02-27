@@ -18,7 +18,16 @@ describe("help output", () => {
         expect(text).toContain("Mapped to onchain function:");
         expect(text).toContain("buyNow");
         expect(text).toContain("--args-json");
-        expect(text).toContain("--abi-file <path> --address <0x...> --args-json");
+        expect(text).toContain("ag baazaar buy-now --profile <name> --args-json");
+        expect(text).toContain("address: 0x80320a0000c7a6a34086e2acad6915ff57ffda31");
+    });
+
+    it("prints ABI defaults while still requiring --address for generic token approve", () => {
+        const text = buildHelpText(["token", "approve"]);
+        expect(text).toContain("approve(address,uint256)");
+        expect(text).toContain("ag token approve --profile <name> --address <0x...> --args-json");
+        expect(text).toContain("source: canonical.erc20");
+        expect(text).toContain("--abi-file (override built-in ABI)");
     });
 
     it("prints built-in mapped defaults for auction bid without --abi-file", () => {

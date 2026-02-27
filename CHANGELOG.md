@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.4 - 2026-02-27
+
 ### Added
 
 - Built-in mapped write metadata for GBM auction commands (`auction bid`, `auction buy-now`, `auction cancel`, `auction create`, `auction swap-bid`):

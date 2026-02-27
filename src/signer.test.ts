@@ -57,6 +57,23 @@ describe("agcli signer parser", () => {
         });
     });
 
+    it("parses bankr signer defaults", () => {
+        expect(parseSigner("bankr")).toEqual({
+            type: "bankr",
+        });
+    });
+
+    it("parses bankr signer with address, api env, and api url", () => {
+        expect(
+            parseSigner("bankr:0x0000000000000000000000000000000000000001|BANKR_KEY|https://api.bankr.bot"),
+        ).toEqual({
+            type: "bankr",
+            address: "0x0000000000000000000000000000000000000001",
+            apiKeyEnvVar: "BANKR_KEY",
+            apiUrl: "https://api.bankr.bot",
+        });
+    });
+
     it("throws for malformed env name", () => {
         expect(() => parseSigner("env:agcli_key")).toThrowError();
     });

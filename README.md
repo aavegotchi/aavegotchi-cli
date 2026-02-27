@@ -175,11 +175,25 @@ npm run ag -- auction active --first 5 --raw --json
 - `keychain:ACCOUNT_ID` (encrypted local key store; requires `AGCLI_KEYCHAIN_PASSPHRASE`)
 - `remote:URL|ADDRESS|AUTH_ENV` (HTTP signer service)
 - `ledger:DERIVATION_PATH|ADDRESS|BRIDGE_ENV` (external bridge command signer)
+- `bankr[:ADDRESS|API_KEY_ENV|API_URL]` (Bankr-native signer via `/agent/me` + `/agent/submit`; defaults: `BANKR_API_KEY`, `https://api.bankr.bot`)
 
 Remote signer contract:
 
 - `GET /address` -> `{ "address": "0x..." }` (optional if address configured)
 - `POST /sign-transaction` -> `{ "rawTransaction": "0x..." }` or `{ "txHash": "0x..." }`
+
+Bankr signer contract:
+
+- `GET /agent/me` -> resolves wallet address when signer address is not pinned
+- `POST /agent/submit` -> submits transaction and returns transaction hash
+- auth header: `x-api-key: <BANKR_API_KEY>`
+
+Bankr bootstrap example:
+
+```bash
+BANKR_API_KEY=... \
+npm run ag -- bootstrap --mode agent --profile bankr --chain base --signer bankr --json
+```
 
 Ledger bridge contract:
 

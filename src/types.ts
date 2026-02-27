@@ -154,12 +154,20 @@ export interface SignerRemoteConfig {
     authEnvVar?: string;
 }
 
+export interface SignerBankrConfig {
+    type: "bankr";
+    address?: `0x${string}`;
+    apiKeyEnvVar?: string;
+    apiUrl?: string;
+}
+
 export type SignerConfig =
     | SignerReadonlyConfig
     | SignerEnvConfig
     | SignerKeychainConfig
     | SignerLedgerConfig
-    | SignerRemoteConfig;
+    | SignerRemoteConfig
+    | SignerBankrConfig;
 
 export interface PolicyConfig {
     name: string;

@@ -88,6 +88,7 @@ Examples:
   ag bootstrap --profile prod --chain base --signer readonly --json
   ag tx send --profile prod --to 0xabc... --value-wei 0 --dry-run --json
   ag onchain send --profile prod --abi-file ./abi.json --address 0xabc... --function approve --args-json '["0xdef...", "1"]' --dry-run --json
+  BANKR_API_KEY=... ag bootstrap --profile bankr --chain base --signer bankr --json
   ag baazaar buy-now --help
   ag help tx send
 `;
@@ -107,6 +108,7 @@ Signer formats:
   keychain:ACCOUNT_ID
   ledger[:DERIVATION_PATH|ADDRESS|BRIDGE_ENV_VAR]
   remote:URL|ADDRESS|AUTH_ENV_VAR
+  bankr[:ADDRESS|API_KEY_ENV|API_URL]
 `,
     profile: `
 Usage:

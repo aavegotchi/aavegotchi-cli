@@ -12,6 +12,15 @@
 - ABI-derived signature/input introspection for mapped help when `--abi-file` is passed.
 - Unknown command suggestion list in `UNKNOWN_COMMAND` error details.
 - CLI UX audit report: `docs/ux/cli-ux-audit-2026-02-27.md`.
+- Native `bankr` signer backend:
+  - signer spec: `bankr[:address|apiKeyEnv|apiUrl]`
+  - default auth env var: `BANKR_API_KEY`
+  - default API URL: `https://api.bankr.bot`
+  - address auto-resolution via `GET /agent/me` when address is not pinned
+  - transaction submit via `POST /agent/submit`
+- Bootstrap overrides now support `bankr`:
+  - `--signer-address` to pin wallet address
+  - `--signer-auth-env-var` to customize Bankr API key env var
 
 ### Changed
 
